@@ -15,8 +15,13 @@ export interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
+  isLoaded: boolean;
   isAuthenticated: boolean;
-  login: (phone: string, pass: string) => Promise<{ success: boolean; message: string }>;
+  login: (
+    phone: string,
+    pass: string,
+    requiredRole?: 'ADMIN',
+  ) => Promise<{ success: boolean; message: string }>;
   register: (data: {
     name: string;
     phone: string;
@@ -66,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       city?: string;
       address?: string;
     },
+    requiredRole?: 'ADMIN',
   ) => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/${endpoint}`, {
@@ -76,6 +82,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data: AuthResponse = await res.json();
       if (res.ok && data.success && data.user && data.token) {
+        if (
+          requiredRole === 'ADMIN' &&
+          data.user.role !== 'SUPER_ADMIN' &&
+          data.user.role !== 'MANAGER'
+        ) {
+          return {
+            success: false,
+            message: 'এই অ্যাকাউন্টের admin portal ব্যবহারের অনুমতি নেই।',
+          };
+        }
+
         setUser(data.user);
         setToken(data.token);
         localStorage.setItem('zakjomok_token', data.token);
@@ -89,8 +106,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = (phone: string, pass: string) =>
-    authenticate('login', { phone, password: pass });
+  const login = async (
+    phone: string,
+    pass: string,
+    requiredRole?: 'ADMIN',
+  ) => authenticate('login', { phone, password: pass }, requiredRole);
 
   const register = (data: {
     name: string;
@@ -127,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         token,
+        isLoaded,
         isAuthenticated: !!user,
         login,
         register,

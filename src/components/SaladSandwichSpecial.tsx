@@ -11,7 +11,6 @@ interface SaladSandwichProps {
 
 export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
   const { addToCart } = useCart();
-
   // Find the salad and sandwich products
   const salad = products.find((p) => p.slug.includes('salad'));
   const sandwich = products.find((p) => p.slug.includes('sandwich'));
@@ -88,11 +87,11 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
               </div>
               {salad && (
                 <button
-                  onClick={() => addToCart(salad, 1)}
+                  onClick={() => addToCart(salad)}
                   className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all hover:scale-105 shadow-md shadow-emerald-500/20"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  অর্ডার করুন
+                  কার্টে যোগ করুন
                 </button>
               )}
             </div>
@@ -149,11 +148,11 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
               </div>
               {sandwich && (
                 <button
-                  onClick={() => addToCart(sandwich, 1)}
+                  onClick={() => addToCart(sandwich)}
                   className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all hover:scale-105 shadow-md shadow-emerald-500/20"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  অর্ডার করুন
+                  কার্টে যোগ করুন
                 </button>
               )}
             </div>

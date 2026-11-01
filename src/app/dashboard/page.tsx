@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
+import { fetchActiveCoupons } from '../../lib/api';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -45,10 +46,10 @@ interface UserOrder {
 interface UserCoupon {
   id: string;
   code: string;
-  description: string;
-  discountPercent?: number;
-  discountAmount?: number;
-  minOrderAmount: number;
+  description: string | null;
+  discountPercent?: number | string | null;
+  discountAmount?: number | string | null;
+  minOrderAmount: number | string;
 }
 
 export default function UserDashboardPage() {
@@ -92,28 +93,23 @@ export default function UserDashboardPage() {
   ]);
 
   // Available Discounts & Coupons
-  const [coupons, setCoupons] = useState<UserCoupon[]>([
-    {
-      id: 'c-1',
-      code: 'WELCOME10',
-      description: 'নতুন রেজিস্ট্রেশন স্পেশাল ১০% ছাড়',
-      discountPercent: 10,
-      minOrderAmount: 300,
-    },
-    {
-      id: 'c-2',
-      code: 'HEALTHY50',
-      description: 'প্রিমিয়াম ফুড অর্ডারে সরাসরি ৳৫০ ছাড়',
-      discountAmount: 50,
-      minOrderAmount: 500,
-    },
-  ]);
+  const [coupons, setCoupons] = useState<UserCoupon[]>([]);
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab');
     if (tab === 'orders' || tab === 'discounts') {
       setActiveTab(tab);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchActiveCoupons()
+      .then((result) => {
+        if (result.success && Array.isArray(result.data)) {
+          setCoupons(result.data);
+        }
+      })
+      .catch((error) => console.error('Error fetching active coupons:', error));
   }, []);
 
   useEffect(() => {
@@ -146,9 +142,6 @@ export default function UserDashboardPage() {
                     createdAt: new Date(o.createdAt).toLocaleDateString('bn-BD'),
                   }))
                 );
-              }
-              if (data.data.availableCoupons && data.data.availableCoupons.length > 0) {
-                setCoupons(data.data.availableCoupons);
               }
             }
           }
@@ -644,18 +637,10 @@ export default function UserDashboardPage() {
               </p>
               <div className="pt-1 flex gap-2">
                 <a
-                  href="tel:01700000000"
+                  href="tel:+8801309834483"
                   className="flex-1 py-2 bg-emerald-800 hover:bg-emerald-700 text-center rounded-xl text-xs font-bold transition-colors"
                 >
                   📞 কল করুন
-                </a>
-                <a
-                  href="https://wa.me/8801700000000"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-center rounded-xl text-xs font-bold transition-colors"
-                >
-                  💬 WhatsApp
                 </a>
               </div>
             </div>

@@ -1,6 +1,25 @@
 import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, Product, Category } from '../data/initialProducts';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+
+export interface BlogPostSummary {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content?: string;
+  isPublished?: boolean;
+  createdAt: string;
+}
+
+export async function fetchBlogs(): Promise<BlogPostSummary[]> {
+  const res = await fetch(`${API_BASE}/api/blogs`, { cache: 'no-store' });
+  const data = await res.json();
+  if (!res.ok || !data.success || !Array.isArray(data.data)) {
+    throw new Error(data.message || 'Blog posts could not be loaded');
+  }
+  return data.data;
+}
 
 export async function fetchCategories(): Promise<Category[]> {
   try {
@@ -37,6 +56,9 @@ export async function fetchProducts(categorySlug?: string, featuredOnly?: boolea
           packSize: p.packSize || '',
           stock: p.stock,
           imageUrl: p.imageUrl || '',
+          ingredients: Array.isArray(p.ingredients) ? p.ingredients : [],
+          highlights: Array.isArray(p.highlights) ? p.highlights : [],
+          calories: p.calories ?? null,
           isFeatured: p.isFeatured,
           categorySlug: p.category?.slug || '',
           categoryName: p.category?.name || '',
@@ -63,38 +85,44 @@ export async function placeOrder(orderData: {
   customerAddress: string;
   deliveryCity: string;
   note?: string;
+  couponCode?: string;
+  userId?: string;
   items: { productId: string; quantity: number }[];
 }) {
-  try {
-    const res = await fetch(`${API_BASE}/api/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData),
-    });
+  const res = await fetch(`${API_BASE}/api/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orderData),
+  });
+  const data = await res.json();
 
-    if (res.ok) {
-      return await res.json();
-    }
-  } catch (error) {
-    console.warn('Backend server not reachable, creating simulated order for local demo.');
+  if (!res.ok) {
+    throw new Error(data.message || 'অর্ডার জমা দেওয়া যায়নি। আবার চেষ্টা করুন।');
   }
 
-  // Fallback demo order response if backend is not started
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  const orderNumber = `ZAK-${Date.now().toString().slice(-4)}${randomSuffix}`;
-  return {
-    success: true,
-    message: 'অর্ডার সফলভাবে গ্রহণ করা হয়েছে! নিশ্চিত করতে আমাদের প্রতিনিধি কল করবেন।',
-    data: {
-      id: 'demo-' + orderNumber,
-      orderNumber,
-      customerName: orderData.customerName,
-      customerPhone: orderData.customerPhone,
-      customerAddress: orderData.customerAddress,
-      deliveryCity: orderData.deliveryCity,
-      status: 'PENDING',
-      paymentMethod: 'COD',
-      deliveryCharge: orderData.deliveryCity.toLowerCase() === 'dhaka' ? 60 : 120,
-    },
-  };
+  return data;
+}
+
+export async function validateCoupon(code: string, subtotal: number, userId?: string) {
+  const res = await fetch(`${API_BASE}/api/coupons/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, subtotal, userId }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || 'কুপন যাচাই করা যায়নি।');
+  }
+
+  return data;
+}
+
+export async function fetchActiveCoupons() {
+  const res = await fetch(`${API_BASE}/api/coupons/active`, { cache: 'no-store' });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'কুপন লোড করা যায়নি।');
+  }
+  return data;
 }

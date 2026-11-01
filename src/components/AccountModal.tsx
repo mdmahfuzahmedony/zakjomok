@@ -70,15 +70,15 @@ export default function AccountModal({ isOpen, onClose }: AccountModalProps) {
     router.push('/dashboard');
   };
 
-  const openCart = () => {
-    onClose();
-    setIsCartOpen(true);
-  };
-
   const handleLogout = () => {
     logout();
     onClose();
     router.push('/');
+  };
+
+  const openCart = () => {
+    onClose();
+    setIsCartOpen(true);
   };
 
   return createPortal(

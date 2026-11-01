@@ -16,6 +16,9 @@ export interface Product {
   packSize: string;
   stock: number;
   imageUrl: string;
+  ingredients?: string[];
+  highlights?: string[];
+  calories?: number | null;
   isFeatured?: boolean;
   categorySlug: string;
   categoryName: string;

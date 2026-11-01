@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Leaf, Phone, Mail, MapPin, Heart } from 'lucide-react';
+import { Leaf, Phone, MapPin, Heart } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -30,11 +30,7 @@ export default function Footer() {
             <div className="pt-2 text-xs text-gray-400 space-y-1.5">
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-400" />
-                <span>হটলাইন: 01700-000000 (সকাল ৯টা - রাত ১০টা)</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-emerald-400" />
-                <span>ইমেইল: support@zakjomok.com</span>
+                <span>হটলাইন: ০১৩০৯-৮৩৪৪৮৩ (সকাল ৯টা - রাত ১০টা)</span>
               </p>
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400" />
@@ -62,7 +58,7 @@ export default function Footer() {
               <li><Link href="/" className="hover:text-emerald-400 transition-colors">হোম পেজ</Link></li>
               <li><a href="#products" className="hover:text-emerald-400 transition-colors">সব পণ্য</a></li>
               <li><a href="#why-choose-us" className="hover:text-emerald-400 transition-colors">আমাদের বৈশিষ্ট্য</a></li>
-              <li><Link href="/checkout" className="hover:text-emerald-400 transition-colors">চেকআউট</Link></li>
+              <li><a href="#products" className="hover:text-emerald-400 transition-colors">পণ্য অর্ডার করুন</a></li>
               <li><Link href="/admin" className="hover:text-emerald-400 transition-colors">Admin Dashboard</Link></li>
             </ul>
           </div>

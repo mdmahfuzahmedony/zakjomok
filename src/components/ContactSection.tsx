@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Phone, MessageCircle, Mail, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 
 export default function ContactSection() {
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
   const [name, setName] = useState('');
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,20 +18,27 @@ export default function ContactSection() {
 
     setIsSubmitting(true);
     try {
-      await fetch('http://localhost:5000/api/contact', {
+      const response = await fetch(`${apiBase}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, emailOrPhone, message }),
       });
-    } catch (e) {
-      // offline support
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'বার্তা পাঠানো যায়নি। আবার চেষ্টা করুন।');
+      }
+
+      setErrorMessage('');
+      setSubmitted(true);
+      setName('');
+      setEmailOrPhone('');
+      setMessage('');
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'বার্তা পাঠানো যায়নি। আবার চেষ্টা করুন।');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
-    setSubmitted(true);
-    setName('');
-    setEmailOrPhone('');
-    setMessage('');
-    setTimeout(() => setSubmitted(false), 5000);
   };
 
   return (
@@ -64,7 +73,7 @@ export default function ContactSection() {
               {/* Direct Quick Actions */}
               <div className="space-y-3 pt-2">
                 <a
-                  href="tel:01700000000"
+                  href="tel:+8801309834483"
                   className="w-full flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl transition-all group"
                 >
                   <div className="flex items-center gap-3">
@@ -73,39 +82,16 @@ export default function ContactSection() {
                     </div>
                     <div>
                       <p className="text-xs text-emerald-200">সরাসরি কথা বলুন</p>
-                      <p className="text-sm font-bold text-white group-hover:underline">০১৭০০-০০০০০০</p>
+                      <p className="text-sm font-bold text-white group-hover:underline">০১৩০৯-৮৩৪৪৮৩</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-lg">কল করুন</span>
                 </a>
 
-                <a
-                  href="https://wa.me/8801700000000"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-between p-4 bg-emerald-600/50 hover:bg-emerald-600/70 border border-emerald-400/30 rounded-2xl transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-400 text-emerald-950 flex items-center justify-center font-bold">
-                      <MessageCircle className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-emerald-200">WhatsApp চ্যাট</p>
-                      <p className="text-sm font-bold text-white">মেসেজ দিন ২৪/৭</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold bg-white text-emerald-900 px-2.5 py-1 rounded-lg">
-                    চ্যাট শুরু করুন
-                  </span>
-                </a>
               </div>
             </div>
 
             <div className="pt-6 border-t border-white/10 text-xs text-emerald-200 space-y-2">
-              <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-emerald-300" />
-                <span>support@zakjomok.com</span>
-              </p>
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-300" />
                 <span>ঢাকা, বাংলাদেশ</span>
@@ -125,11 +111,16 @@ export default function ContactSection() {
                 <CheckCircle2 className="w-10 h-10 text-emerald-700 mx-auto" />
                 <h4 className="font-bold text-emerald-900 text-sm">বার্তা সফলভাবে পাঠানো হয়েছে!</h4>
                 <p className="text-xs text-emerald-700">
-                  ধন্যবাদ, আমাদের কাস্টমার প্রতিনিধি খুব শীঘ্রই আপনার সাথে যোগাযোগ করবেন।
+                  ধন্যবাদ! আপনার বার্তাটি আমাদের কাছে পৌঁছেছে।
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {errorMessage && (
+                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    {errorMessage}
+                  </p>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -37,8 +38,13 @@ import {
   ArrowUpRight,
   Calendar,
   Percent,
+  BookOpen,
 } from 'lucide-react';
-import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, Product, Category } from '../../../data/initialProducts';
+import { Product, Category } from '../../../data/initialProducts';
+import { useAuth } from '../../../context/AuthContext';
+import AdminImageUpload from '../../../components/AdminImageUpload';
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 interface AdminOrder {
   id: string;
@@ -54,10 +60,43 @@ interface AdminOrder {
   createdAt: string;
 }
 
+interface AdminCoupon {
+  id: string;
+  code: string;
+  description: string | null;
+  discountPercent: number | string | null;
+  discountAmount: number | string | null;
+  minOrderAmount: number | string;
+  isActive: boolean;
+}
+
+interface AdminMessage {
+  id: string;
+  name: string;
+  emailOrPhone: string;
+  subject: string | null;
+  message: string;
+  createdAt: string;
+}
+
+interface AdminBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  isPublished: boolean;
+  createdAt: string;
+}
+
 export default function AdminDashboardPage() {
-  // Clean navigation tabs: overview, products, categories, orders, customers, coupons, messages
+  const router = useRouter();
+  const { isLoaded, token, user, logout } = useAuth();
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
+
+  // Dashboard sections
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'products' | 'categories' | 'orders' | 'customers' | 'coupons' | 'messages'
+    'overview' | 'products' | 'categories' | 'orders' | 'customers' | 'coupons' | 'messages' | 'blogs'
   >('overview');
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -66,8 +105,17 @@ export default function AdminDashboardPage() {
   const [salesPeriod, setSalesPeriod] = useState<'today' | '7days' | 'month' | 'year'>('7days');
 
   // Products and Categories states
-  const [productsList, setProductsList] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [categoriesList, setCategoriesList] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [categoriesList, setCategoriesList] = useState<Category[]>([]);
+  const [couponsList, setCouponsList] = useState<AdminCoupon[]>([]);
+  const [newCouponCode, setNewCouponCode] = useState('');
+  const [newCouponAmount, setNewCouponAmount] = useState('');
+  const [newCouponMinOrder, setNewCouponMinOrder] = useState('');
+  const [blogPosts, setBlogPosts] = useState<AdminBlogPost[]>([]);
+  const [newBlogTitle, setNewBlogTitle] = useState('');
+  const [newBlogExcerpt, setNewBlogExcerpt] = useState('');
+  const [newBlogContent, setNewBlogContent] = useState('');
+  const [isSavingBlog, setIsSavingBlog] = useState(false);
 
   // In-Page Add Product Form Toggle (Directly inside the page)
   const [showInPageAddProduct, setShowInPageAddProduct] = useState(false);
@@ -79,13 +127,16 @@ export default function AdminDashboardPage() {
 
   // New Product Form State
   const [newProdName, setNewProdName] = useState('');
-  const [newProdCategory, setNewProdCategory] = useState(INITIAL_CATEGORIES[0]?.slug || 'fresh-meals');
+  const [newProdCategory, setNewProdCategory] = useState('');
   const [newProdPrice, setNewProdPrice] = useState('');
   const [newProdDiscountPrice, setNewProdDiscountPrice] = useState('');
   const [newProdPackSize, setNewProdPackSize] = useState('250g Jar');
-  const [newProdStock, setNewProdStock] = useState('50');
   const [newProdImageUrl, setNewProdImageUrl] = useState('');
   const [newProdDescription, setNewProdDescription] = useState('');
+  const [newProdIngredients, setNewProdIngredients] = useState(['']);
+  const [newProdHighlights, setNewProdHighlights] = useState(['']);
+  const [newProdCalories, setNewProdCalories] = useState('');
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
 
   // Edit Product Form State
   const [editPrice, setEditPrice] = useState('');
@@ -98,12 +149,16 @@ export default function AdminDashboardPage() {
   const [newCatSlug, setNewCatSlug] = useState('');
   const [newCatImageUrl, setNewCatImageUrl] = useState('');
   const [newCatDescription, setNewCatDescription] = useState('');
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
 
   // Toast message
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ message, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -150,22 +205,22 @@ export default function AdminDashboardPage() {
     },
   ]);
 
-  const [messages] = useState([
-    {
-      id: 'msg-1',
-      name: 'আসিফ মাহমুদ',
-      contact: '01733-112233',
-      message: 'প্রতিদিন সকালে সালাদ ও স্যান্ডউইচ সাবস্ক্রিপশন কি নেওয়া যাবে?',
-      time: 'আজ, ১১:০০ AM',
-    },
-  ]);
+  const [messages, setMessages] = useState<AdminMessage[]>([]);
 
   // Load backend real data (Orders, Products, Categories, Messages)
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isAdmin || !token) {
+      router.replace('/admin');
+      return;
+    }
+
     async function fetchBackendData() {
       // 1. Orders
       try {
-        const res = await fetch('http://localhost:5000/api/orders');
+        const res = await fetch(`${API_BASE}/api/orders`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.data && data.data.length > 0) {
@@ -193,42 +248,126 @@ export default function AdminDashboardPage() {
 
       // 2. Categories
       try {
-        const catRes = await fetch('http://localhost:5000/api/categories');
-        if (catRes.ok) {
-          const catData = await catRes.json();
-          if (catData.success && catData.data && catData.data.length > 0) {
-            setCategoriesList(catData.data);
-          }
+        const catRes = await fetch(`${API_BASE}/api/categories`);
+        if (!catRes.ok) {
+          throw new Error(`Category request failed with status ${catRes.status}`);
         }
-      } catch (e) {}
+
+        const catData: {
+          success?: boolean;
+          data?: Array<{
+            id: string;
+            name: string;
+            slug: string;
+            description?: string | null;
+            imageUrl?: string | null;
+          }>;
+        } = await catRes.json();
+        if (!catData.success || !Array.isArray(catData.data)) {
+          throw new Error('Category API returned an invalid response');
+        }
+
+        const savedCategories: Category[] = catData.data.map((category) => ({
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          description: category.description || '',
+          imageUrl: category.imageUrl || '',
+        }));
+        setCategoriesList(savedCategories);
+        setNewProdCategory((current) =>
+          savedCategories.some((category) => category.slug === current)
+            ? current
+            : savedCategories[0]?.slug || '',
+        );
+      } catch (error) {
+        console.error('Error fetching admin categories:', error);
+      }
 
       // 3. Products
       try {
-        const prodRes = await fetch('http://localhost:5000/api/products');
-        if (prodRes.ok) {
-          const prodData = await prodRes.json();
-          if (prodData.success && prodData.data && prodData.data.length > 0) {
-            const mappedProds: Product[] = prodData.data.map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              slug: p.slug,
-              description: p.description || '',
-              price: p.price,
-              discountPrice: p.discountPrice || undefined,
-              packSize: p.packSize || '',
-              stock: p.stock,
-              imageUrl: p.imageUrl || '',
-              isFeatured: p.isFeatured,
-              categorySlug: p.category?.slug || '',
-              categoryName: p.category?.name || '',
-            }));
-            setProductsList(mappedProds);
-          }
+        const prodRes = await fetch(`${API_BASE}/api/products`);
+        if (!prodRes.ok) {
+          throw new Error(`Product request failed with status ${prodRes.status}`);
         }
-      } catch (e) {}
+
+        const prodData = await prodRes.json();
+        if (!prodData.success || !Array.isArray(prodData.data)) {
+          throw new Error('Product API returned an invalid response');
+        }
+
+        const mappedProds: Product[] = prodData.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          description: p.description || '',
+          price: Number(p.price),
+          discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
+          packSize: p.packSize || '',
+          stock: p.stock,
+          imageUrl: p.imageUrl || '',
+          ingredients: Array.isArray(p.ingredients) ? p.ingredients : [],
+          highlights: Array.isArray(p.highlights) ? p.highlights : [],
+          calories: p.calories ?? null,
+          isFeatured: p.isFeatured,
+          categorySlug: p.category?.slug || '',
+          categoryName: p.category?.name || '',
+        }));
+        setProductsList(mappedProds);
+      } catch (error) {
+        console.error('Error fetching admin products:', error);
+      }
+
+      try {
+        const couponRes = await fetch(`${API_BASE}/api/coupons`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        const couponData = await couponRes.json();
+        if (!couponRes.ok || !couponData.success || !Array.isArray(couponData.data)) {
+          throw new Error(couponData.message || 'Coupon API returned an invalid response');
+        }
+        setCouponsList(couponData.data);
+      } catch (error) {
+        console.error('Error fetching admin coupons:', error);
+        showToast('কুপন তালিকা লোড করা যায়নি।', 'error');
+      }
+
+      try {
+        const messageRes = await fetch(`${API_BASE}/api/contact`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const messageData = await messageRes.json();
+        if (!messageRes.ok || !messageData.success || !Array.isArray(messageData.data)) {
+          throw new Error(messageData.message || 'Messages API returned an invalid response');
+        }
+        setMessages(messageData.data);
+      } catch (error) {
+        console.error('Error fetching admin messages:', error);
+      }
+
+      try {
+        const blogRes = await fetch(`${API_BASE}/api/blogs/admin`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const blogData = await blogRes.json();
+        if (!blogRes.ok || !blogData.success || !Array.isArray(blogData.data)) {
+          throw new Error(blogData.message || 'Blog API returned an invalid response');
+        }
+        setBlogPosts(blogData.data);
+      } catch (error) {
+        console.error('Error fetching admin blog posts:', error);
+      }
     }
     fetchBackendData();
-  }, []);
+  }, [isAdmin, isLoaded, router, token]);
+
+  if (!isLoaded || !isAdmin || !token) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-stone-100">
+        <p className="text-sm font-semibold text-emerald-800">লোড হচ্ছে...</p>
+      </main>
+    );
+  }
 
   const handleUpdateStatus = async (
     orderId: string,
@@ -239,9 +378,12 @@ export default function AdminDashboardPage() {
     );
 
     try {
-      await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ status: newStatus }),
       });
     } catch (e) {
@@ -250,61 +392,207 @@ export default function AdminDashboardPage() {
     showToast(`অর্ডার স্ট্যাটাস ${newStatus} এ আপডেট হয়েছে!`);
   };
 
+  const handleCreateCoupon = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const discountAmount = Number(newCouponAmount);
+    const minOrderAmount = newCouponMinOrder ? Number(newCouponMinOrder) : 0;
+    if (!newCouponCode.trim() || !Number.isFinite(discountAmount) || discountAmount <= 0 ||
+      !Number.isFinite(minOrderAmount) || minOrderAmount < 0) {
+      showToast('সঠিক কুপন কোড ও ছাড়ের পরিমাণ দিন।', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/coupons`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: newCouponCode.trim(),
+          discountAmount,
+          minOrderAmount,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'কুপন তৈরি করা যায়নি।');
+      }
+
+      setCouponsList((current) => [result.data, ...current]);
+      setNewCouponCode('');
+      setNewCouponAmount('');
+      setNewCouponMinOrder('');
+      showToast('কুপন তৈরি ও সক্রিয় হয়েছে।');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'কুপন তৈরি করা যায়নি।', 'error');
+    }
+  };
+
+  const handleToggleCoupon = async (coupon: AdminCoupon) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/coupons/${coupon.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isActive: !coupon.isActive }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'কুপনের অবস্থা পরিবর্তন করা যায়নি।');
+      }
+
+      setCouponsList((current) =>
+        current.map((item) => item.id === coupon.id ? result.data : item)
+      );
+      showToast(coupon.isActive ? 'কুপন নিষ্ক্রিয় করা হয়েছে।' : 'কুপন আবার সক্রিয় হয়েছে।');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'কুপনের অবস্থা পরিবর্তন করা যায়নি।', 'error');
+    }
+  };
+
+  const handleCreateBlogPost = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSavingBlog(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/blogs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: newBlogTitle.trim(),
+          excerpt: newBlogExcerpt.trim(),
+          content: newBlogContent.trim(),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.message || 'ব্লগ প্রকাশ করা যায়নি।');
+      }
+
+      setBlogPosts((current) => [result.data, ...current]);
+      setNewBlogTitle('');
+      setNewBlogExcerpt('');
+      setNewBlogContent('');
+      showToast('ব্লগ প্রকাশ করা হয়েছে।');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'ব্লগ প্রকাশ করা যায়নি।', 'error');
+    } finally {
+      setIsSavingBlog(false);
+    }
+  };
+
   // 1. ADD NEW PRODUCT HANDLER (Directly Inside Page & Synced to Backend)
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProdName || !newProdPrice) return;
+    if (!newProdName.trim() || !newProdPrice) return;
+    if (!newProdImageUrl) {
+      showToast('পণ্য সেভ করার আগে gallery থেকে ছবি বেছে upload করুন।', 'error');
+      return;
+    }
 
     const matchedCat = categoriesList.find((c) => c.slug === newProdCategory);
     const slug = newProdName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!slug || !matchedCat) {
+      showToast('পণ্যের নাম ইংরেজিতে দিন এবং একটি category বেছে নিন।', 'error');
+      return;
+    }
 
-    const newProduct: Product = {
-      id: 'prod-' + Date.now(),
-      name: newProdName,
-      slug,
-      price: parseFloat(newProdPrice),
-      discountPrice: newProdDiscountPrice ? parseFloat(newProdDiscountPrice) : undefined,
-      packSize: newProdPackSize,
-      stock: parseInt(newProdStock) || 50,
-      imageUrl:
-        newProdImageUrl.trim() ||
-        'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-      description: newProdDescription || 'প্রাকৃতিক ও স্বাস্থ্যকর পুষ্টিকর খাবার।',
-      categorySlug: newProdCategory,
-      categoryName: matchedCat?.name || 'Healthy Food',
-      isFeatured: true,
-    };
-
-    setProductsList([newProduct, ...productsList]);
-    setShowInPageAddProduct(false);
-
-    // Sync to Backend
+    setIsSavingProduct(true);
     try {
-      await fetch('http://localhost:5000/api/products', {
+      const ingredients = newProdIngredients.map((item) => item.trim()).filter(Boolean);
+      const highlights = newProdHighlights.map((item) => item.trim()).filter(Boolean);
+      const response = await fetch(`${API_BASE}/api/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          name: newProduct.name,
-          slug: newProduct.slug,
-          description: newProduct.description,
-          price: newProduct.price,
-          discountPrice: newProduct.discountPrice,
-          packSize: newProduct.packSize,
-          stock: newProduct.stock,
-          imageUrl: newProduct.imageUrl,
-          categoryId: matchedCat?.id,
+          name: newProdName.trim(),
+          slug,
+          description: newProdDescription.trim() || 'প্রাকৃতিক ও স্বাস্থ্যকর পুষ্টিকর খাবার।',
+          price: parseFloat(newProdPrice),
+          discountPrice: newProdDiscountPrice ? parseFloat(newProdDiscountPrice) : undefined,
+          ingredients,
+          highlights,
+          calories: newProdCalories ? Number(newProdCalories) : null,
+          packSize: newProdPackSize,
+          imageUrl: newProdImageUrl,
+          categoryId: matchedCat.id,
           isFeatured: true,
         }),
       });
-    } catch (err) {}
 
-    // Reset Form
-    setNewProdName('');
-    setNewProdPrice('');
-    setNewProdDiscountPrice('');
-    setNewProdImageUrl('');
-    setNewProdDescription('');
-    showToast('নতুন পণ্য সফলভাবে যোগ করা হয়েছে!');
+      const result: {
+        success?: boolean;
+        data?: {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          price: number | string;
+          discountPrice: number | string | null;
+          packSize: string | null;
+          stock: number;
+          imageUrl: string | null;
+          ingredients: string[];
+          highlights: string[];
+          calories: number | null;
+          isFeatured: boolean;
+          category: { slug: string; name: string };
+        };
+        message?: string;
+      } = await response.json();
+
+      if (!response.ok || !result.success || !result.data) {
+        showToast(result.message || 'পণ্য সংরক্ষণ করা যায়নি।', 'error');
+        return;
+      }
+
+      const savedProduct: Product = {
+        id: result.data.id,
+        name: result.data.name,
+        slug: result.data.slug,
+        description: result.data.description || '',
+        price: Number(result.data.price),
+        discountPrice: result.data.discountPrice
+          ? Number(result.data.discountPrice)
+          : undefined,
+        packSize: result.data.packSize || '',
+        stock: result.data.stock,
+        imageUrl: result.data.imageUrl || newProdImageUrl,
+        ingredients: result.data.ingredients,
+        highlights: result.data.highlights,
+        calories: result.data.calories,
+        isFeatured: result.data.isFeatured,
+        categorySlug: result.data.category.slug,
+        categoryName: result.data.category.name,
+      };
+
+      setProductsList((current) => [savedProduct, ...current]);
+      setShowInPageAddProduct(false);
+      setNewProdName('');
+      setNewProdPrice('');
+      setNewProdDiscountPrice('');
+      setNewProdImageUrl('');
+      setNewProdDescription('');
+      setNewProdIngredients(['']);
+      setNewProdHighlights(['']);
+      setNewProdCalories('');
+      showToast('নতুন পণ্য সফলভাবে যোগ করা হয়েছে!');
+    } catch (error) {
+      console.error('Error creating product:', error);
+      showToast('সার্ভারের সঙ্গে যোগাযোগ করা যায়নি; পণ্য সংরক্ষিত হয়নি।', 'error');
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
   // 2. OPEN EDIT MODAL
@@ -345,9 +633,12 @@ export default function AdminDashboardPage() {
 
     // Sync to backend
     try {
-      await fetch(`http://localhost:5000/api/products/${selectedProduct.id}`, {
+      await fetch(`${API_BASE}/api/products/${selectedProduct.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           price: updatedPrice,
           discountPrice: updatedDiscount,
@@ -365,8 +656,9 @@ export default function AdminDashboardPage() {
     if (confirm(`আপনি কি সত্যিই "${name}" পণ্যটি মুছে ফেলতে চান?`)) {
       setProductsList(productsList.filter((p) => p.id !== id));
       try {
-        await fetch(`http://localhost:5000/api/products/${id}`, {
+        await fetch(`${API_BASE}/api/products/${id}`, {
           method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
         });
       } catch (err) {}
       showToast('পণ্যটি সফলভাবে মুছে ফেলা হয়েছে!');
@@ -376,44 +668,62 @@ export default function AdminDashboardPage() {
   // 5. ADD NEW CATEGORY HANDLER (Directly Inside Page & Synced to Backend)
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCatName) return;
+    const name = newCatName.trim();
+    if (!name) return;
+    if (!newCatImageUrl) {
+      showToast('ক্যাটাগরি সেভ করার আগে gallery থেকে ছবি বেছে upload করুন।', 'error');
+      return;
+    }
 
-    const slug =
-      newCatSlug.trim() ||
-      newCatName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const slug = (newCatSlug.trim() || name.toLowerCase())
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    if (!slug) {
+      showToast('বাংলা নামের জন্য ইংরেজি অক্ষরে একটি URL slug দিন।', 'error');
+      return;
+    }
 
-    const newCategory: Category = {
-      id: 'cat-' + Date.now(),
-      name: newCatName,
-      slug,
-      description: newCatDescription || 'প্রাকৃতিক ও স্বাস্থ্যকর পণ্যের সম্ভার',
-      imageUrl:
-        newCatImageUrl.trim() ||
-        'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-    };
-
-    setCategoriesList([...categoriesList, newCategory]);
-    setShowInPageAddCategory(false);
-
-    // Sync to backend
+    setIsSavingCategory(true);
     try {
-      await fetch('http://localhost:5000/api/categories', {
+      const response = await fetch(`${API_BASE}/api/categories`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          name: newCategory.name,
-          slug: newCategory.slug,
-          description: newCategory.description,
-          imageUrl: newCategory.imageUrl,
+          name,
+          slug,
+          description: newCatDescription.trim() || 'প্রাকৃতিক ও স্বাস্থ্যকর পণ্যের সম্ভার',
+          imageUrl: newCatImageUrl,
         }),
       });
-    } catch (err) {}
 
-    setNewCatName('');
-    setNewCatSlug('');
-    setNewCatImageUrl('');
-    setNewCatDescription('');
-    showToast('নতুন ক্যাটাগরি তৈরি সম্পন্ন হয়েছে!');
+      const result: {
+        success?: boolean;
+        data?: Category;
+        message?: string;
+      } = await response.json();
+      const savedCategory = result.data;
+
+      if (!response.ok || !result.success || !savedCategory) {
+        showToast(result.message || 'ক্যাটাগরি সংরক্ষণ করা যায়নি।', 'error');
+        return;
+      }
+
+      setCategoriesList((current) => [...current, savedCategory]);
+      setShowInPageAddCategory(false);
+      setNewCatName('');
+      setNewCatSlug('');
+      setNewCatImageUrl('');
+      setNewCatDescription('');
+      showToast('নতুন ক্যাটাগরি তৈরি সম্পন্ন হয়েছে!');
+    } catch (error) {
+      console.error('Error creating category:', error);
+      showToast('সার্ভারের সঙ্গে যোগাযোগ করা যায়নি; ক্যাটাগরি সংরক্ষিত হয়নি।', 'error');
+    } finally {
+      setIsSavingCategory(false);
+    }
   };
 
   // Metrics
@@ -468,9 +778,19 @@ export default function AdminDashboardPage() {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-emerald-700 flex items-center gap-2 text-xs font-bold animate-slide-up">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
+        <div
+          className={`fixed bottom-6 right-6 z-50 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold animate-slide-up ${
+            toastMessage.type === 'error'
+              ? 'bg-red-900 border border-red-700'
+              : 'bg-emerald-900 border border-emerald-700'
+          }`}
+        >
+          {toastMessage.type === 'error' ? (
+            <AlertTriangle className="w-4 h-4 text-red-300" />
+          ) : (
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+          )}
+          <span>{toastMessage.message}</span>
         </div>
       )}
 
@@ -653,6 +973,24 @@ export default function AdminDashboardPage() {
                 {messages.length}
               </span>
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('blogs');
+                setMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-xs transition-all ${
+                activeTab === 'blogs'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                  : 'text-emerald-100/80 hover:bg-emerald-900 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-4 h-4" />
+                <span>📝 ব্লগ লেখা</span>
+              </div>
+              <span className="text-[10px] text-emerald-300 font-bold">{blogPosts.length}</span>
+            </button>
           </div>
         </div>
 
@@ -672,12 +1010,24 @@ export default function AdminDashboardPage() {
 
           <div className="flex items-center gap-3 px-2 pt-1">
             <div className="w-9 h-9 rounded-xl bg-emerald-700 flex items-center justify-center font-black text-sm">
-              A
+              {user?.name.charAt(0).toUpperCase() || 'A'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">ZakJomok Admin</p>
-              <p className="text-[10px] text-emerald-300 truncate">admin@zakjomok.com</p>
+              <p className="text-xs font-bold text-white truncate">{user?.name}</p>
+              <p className="text-[10px] text-emerald-300 truncate">{user?.phone}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                router.replace('/admin');
+              }}
+              aria-label="Admin থেকে লগআউট"
+              title="লগআউট"
+              className="rounded-lg p-2 text-emerald-200 transition hover:bg-emerald-900 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>
@@ -712,6 +1062,7 @@ export default function AdminDashboardPage() {
                 {activeTab === 'customers' && '👥 কাস্টমার ডাটাবেজ'}
                 {activeTab === 'coupons' && '🏷️ ডিসকাউন্ট ও কুপন কোড'}
                 {activeTab === 'messages' && '✉️ কাস্টমার ইনকোয়ারি বার্তা'}
+                {activeTab === 'blogs' && '📝 ব্লগ লেখা ও প্রকাশ'}
               </h1>
               <p className="text-xs text-gray-500 hidden sm:block">
                 ZakJomok Healthy Food • ফুল উইডথ বিজনেস কন্ট্রোল প্যানেল
@@ -1510,27 +1861,20 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="p-3.5 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/80 flex items-center justify-between">
-                        <div>
-                          <span className="font-mono font-black text-emerald-900 text-xs">WELCOME10</span>
-                          <p className="text-[11px] text-gray-700 font-bold mt-0.5">১০% ওয়েলকাম ছাড়</p>
-                          <span className="text-[10px] text-gray-500">নতুন গ্রাহকদের জন্য</span>
+                      {couponsList.filter((coupon) => coupon.isActive).slice(0, 3).map((coupon) => (
+                        <div key={coupon.id} className="flex items-center justify-between rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/80 p-3.5">
+                          <div>
+                            <span className="font-mono text-xs font-black text-emerald-900">{coupon.code}</span>
+                            <p className="mt-0.5 text-[11px] font-bold text-gray-700">
+                              {coupon.discountPercent ? `${coupon.discountPercent}% ছাড়` : `৳${coupon.discountAmount} ছাড়`}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-900">সক্রিয়</span>
                         </div>
-                        <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">
-                          সক্রিয়
-                        </span>
-                      </div>
-
-                      <div className="p-3.5 rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 flex items-center justify-between">
-                        <div>
-                          <span className="font-mono font-black text-amber-950 text-xs">HEALTHY50</span>
-                          <p className="text-[11px] text-gray-700 font-bold mt-0.5">৳৫০ ফ্ল্যাট ডিসকাউন্ট</p>
-                          <span className="text-[10px] text-gray-500">ন্যূনতম ৫০০ টাকার অর্ডারে</span>
-                        </div>
-                        <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">
-                          সক্রিয়
-                        </span>
-                      </div>
+                      ))}
+                      {couponsList.every((coupon) => !coupon.isActive) && (
+                        <p className="text-xs text-gray-500">এখন কোনো কুপন সক্রিয় নেই।</p>
+                      )}
                     </div>
                   </div>
 
@@ -1554,15 +1898,19 @@ export default function AdminDashboardPage() {
                         <div key={m.id} className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-1">
                           <div className="flex justify-between items-center font-bold text-gray-900">
                             <span>{m.name}</span>
-                            <span className="text-[10px] text-gray-400 font-normal">{m.time}</span>
+                            <span className="text-[10px] text-gray-400 font-normal">{new Date(m.createdAt).toLocaleString('bn-BD')}</span>
                           </div>
+                          <p className="font-semibold text-gray-700">{m.emailOrPhone}</p>
+                          {m.subject && <p className="text-gray-500">{m.subject}</p>}
                           <p className="text-gray-600 text-[11px] line-clamp-2">{m.message}</p>
-                          <a
-                            href={`tel:${m.contact}`}
-                            className="text-[10px] text-emerald-700 font-bold inline-flex items-center gap-1 hover:underline mt-1"
-                          >
-                            <PhoneCall className="w-2.5 h-2.5" /> কল: {m.contact}
-                          </a>
+                          {!m.emailOrPhone.includes('@') && (
+                            <a
+                              href={`tel:${m.emailOrPhone}`}
+                              className="text-[10px] text-emerald-700 font-bold inline-flex items-center gap-1 hover:underline mt-1"
+                            >
+                              <PhoneCall className="w-2.5 h-2.5" /> কল: {m.emailOrPhone}
+                            </a>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1641,20 +1989,29 @@ export default function AdminDashboardPage() {
                           ক্যাটাগরি নির্বাচন করুন <span className="text-red-500">*</span>
                         </label>
                         <select
+                          required
                           value={newProdCategory}
                           onChange={(e) => setNewProdCategory(e.target.value)}
                           className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden bg-white font-semibold"
                         >
+                          <option value="" disabled>
+                            {categoriesList.length ? 'একটি category বেছে নিন' : 'আগে category তৈরি করুন'}
+                          </option>
                           {categoriesList.map((c) => (
                             <option key={c.slug} value={c.slug}>
                               {c.name}
                             </option>
                           ))}
                         </select>
+                        {categoriesList.length === 0 && (
+                          <p className="mt-1 text-[10px] text-amber-700">
+                            Product যোগ করার আগে Categories tab থেকে একটি category তৈরি করুন।
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1">
                           বিক্রয় মূল্য (টাকায়) <span className="text-red-500">*</span>
@@ -1695,35 +2052,31 @@ export default function AdminDashboardPage() {
                           className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden"
                         />
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1">
-                          স্টক সংখ্যা (পিস) <span className="text-red-500">*</span>
+                          ক্যালরি (প্রতি প্যাক/সার্ভিং)
                         </label>
                         <input
                           type="number"
-                          required
-                          placeholder="৫০"
-                          value={newProdStock}
-                          onChange={(e) => setNewProdStock(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          পণ্যের ছবির লিঙ্ক (Image URL)
-                        </label>
-                        <input
-                          type="url"
-                          placeholder="https://images.unsplash.com/..."
-                          value={newProdImageUrl}
-                          onChange={(e) => setNewProdImageUrl(e.target.value)}
+                          min="0"
+                          max="100000"
+                          step="1"
+                          placeholder="যেমন: 250 kcal"
+                          value={newProdCalories}
+                          onChange={(e) => setNewProdCalories(e.target.value)}
                           className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden"
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <AdminImageUpload
+                        folder="products"
+                        imageUrl={newProdImageUrl}
+                        token={token}
+                        onImageUrlChange={setNewProdImageUrl}
+                      />
                     </div>
 
                     <div>
@@ -1739,6 +2092,90 @@ export default function AdminDashboardPage() {
                       />
                     </div>
 
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2 rounded-2xl border border-stone-200 p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-xs font-bold text-gray-700">উপাদান</label>
+                          <button
+                            type="button"
+                            onClick={() => setNewProdIngredients((items) => [...items, ''])}
+                            className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                          >
+                            + উপাদান যোগ করুন
+                          </button>
+                        </div>
+                        {newProdIngredients.map((ingredient, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              maxLength={120}
+                              aria-label={`উপাদান ${index + 1}`}
+                              placeholder={index === 0 ? 'যেমন: কাঠবাদাম' : `উপাদান ${index + 1}`}
+                              value={ingredient}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setNewProdIngredients((items) =>
+                                  items.map((item, itemIndex) => itemIndex === index ? value : item)
+                                );
+                              }}
+                              className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-xs focus:border-emerald-600 focus:outline-hidden"
+                            />
+                            {newProdIngredients.length > 1 && (
+                              <button
+                                type="button"
+                                aria-label={`উপাদান ${index + 1} মুছুন`}
+                                onClick={() => setNewProdIngredients((items) => items.filter((_, itemIndex) => itemIndex !== index))}
+                                className="rounded-lg px-2.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+                              >
+                                বাদ
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2 rounded-2xl border border-stone-200 p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-xs font-bold text-gray-700">হাইলাইট / বিশেষ দিক</label>
+                          <button
+                            type="button"
+                            onClick={() => setNewProdHighlights((items) => [...items, ''])}
+                            className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                          >
+                            + হাইলাইট যোগ করুন
+                          </button>
+                        </div>
+                        {newProdHighlights.map((highlight, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              maxLength={120}
+                              aria-label={`হাইলাইট ${index + 1}`}
+                              placeholder={index === 0 ? 'যেমন: প্রোটিন সমৃদ্ধ' : `হাইলাইট ${index + 1}`}
+                              value={highlight}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setNewProdHighlights((items) =>
+                                  items.map((item, itemIndex) => itemIndex === index ? value : item)
+                                );
+                              }}
+                              className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-xs focus:border-emerald-600 focus:outline-hidden"
+                            />
+                            {newProdHighlights.length > 1 && (
+                              <button
+                                type="button"
+                                aria-label={`হাইলাইট ${index + 1} মুছুন`}
+                                onClick={() => setNewProdHighlights((items) => items.filter((_, itemIndex) => itemIndex !== index))}
+                                className="rounded-lg px-2.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+                              >
+                                বাদ
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="pt-2 flex justify-end gap-3">
                       <button
                         type="button"
@@ -1749,9 +2186,10 @@ export default function AdminDashboardPage() {
                       </button>
                       <button
                         type="submit"
-                        className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/20"
+                        disabled={isSavingProduct}
+                        className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/20"
                       >
-                        ✓ পণ্য সেভ করুন
+                        {isSavingProduct ? 'সেভ হচ্ছে...' : '✓ পণ্য সেভ করুন'}
                       </button>
                     </div>
                   </form>
@@ -1926,16 +2364,25 @@ export default function AdminDashboardPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">ছবির লিঙ্ক (URL)</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">URL slug</label>
                         <input
-                          type="url"
-                          placeholder="https://images.unsplash.com/..."
-                          value={newCatImageUrl}
-                          onChange={(e) => setNewCatImageUrl(e.target.value)}
+                          type="text"
+                          placeholder="যেমন: nuts-dry-fruits"
+                          value={newCatSlug}
+                          onChange={(e) => setNewCatSlug(e.target.value)}
                           className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden"
                         />
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          খালি রাখলে ইংরেজি নাম থেকে তৈরি হবে; বাংলা নাম হলে ইংরেজি slug লিখুন।
+                        </p>
                       </div>
                     </div>
+                    <AdminImageUpload
+                      folder="categories"
+                      imageUrl={newCatImageUrl}
+                      token={token}
+                      onImageUrlChange={setNewCatImageUrl}
+                    />
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">সংক্ষিপ্ত বিবরণ</label>
                       <textarea
@@ -1956,9 +2403,10 @@ export default function AdminDashboardPage() {
                       </button>
                       <button
                         type="submit"
-                        className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold"
+                        disabled={isSavingCategory}
+                        className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold"
                       >
-                        ক্যাটাগরি সেভ করুন
+                        {isSavingCategory ? 'সেভ হচ্ছে...' : 'ক্যাটাগরি সেভ করুন'}
                       </button>
                     </div>
                   </form>
@@ -2172,20 +2620,80 @@ export default function AdminDashboardPage() {
 
           {/* TAB 6: COUPONS */}
           {activeTab === 'coupons' && (
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 space-y-6 w-full">
-              <h3 className="text-lg font-bold text-gray-900">কুপন ও স্পেশাল ছাড়</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="p-5 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50">
-                  <span className="font-mono font-black text-emerald-900 text-base">WELCOME10</span>
-                  <p className="text-xs font-bold text-gray-800 mt-1">১০% ওয়েলকাম ছাড় (নতুন গ্রাহক)</p>
-                  <p className="text-[11px] text-gray-500">ন্যূনতম অর্ডার: ৳৩০০</p>
-                </div>
-                <div className="p-5 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50">
-                  <span className="font-mono font-black text-emerald-900 text-base">HEALTHY50</span>
-                  <p className="text-xs font-bold text-gray-800 mt-1">সরাসরি ৳৫০ ছাড়</p>
-                  <p className="text-[11px] text-gray-500">ন্যূনতম অর্ডার: ৳৫০০</p>
-                </div>
-              </div>
+              <div className="w-full space-y-6 rounded-3xl border border-stone-200 bg-white p-6">
+                <h3 className="text-lg font-bold text-gray-900">কুপন ও স্পেশাল ছাড়</h3>
+
+                <form onSubmit={handleCreateCoupon} className="grid grid-cols-1 gap-3 rounded-2xl bg-stone-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <input
+                    required
+                    value={newCouponCode}
+                    onChange={(event) => setNewCouponCode(event.target.value.toUpperCase())}
+                    placeholder="কুপন কোড"
+                    className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-600"
+                  />
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={newCouponAmount}
+                    onChange={(event) => setNewCouponAmount(event.target.value)}
+                    placeholder="কত টাকা ছাড়"
+                    className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-600"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={newCouponMinOrder}
+                    onChange={(event) => setNewCouponMinOrder(event.target.value)}
+                    placeholder="সর্বনিম্ন অর্ডার (ঐচ্ছিক)"
+                    className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-600"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800"
+                  >
+                    কুপন তৈরি করুন
+                  </button>
+                </form>
+
+                {couponsList.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-gray-500">এখনো কোনো কুপন তৈরি করা হয়নি।</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {couponsList.map((coupon) => (
+                      <div
+                        key={coupon.id}
+                        className={`rounded-2xl border p-5 ${coupon.isActive ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className="font-mono text-base font-black text-emerald-900">{coupon.code}</span>
+                            <p className="mt-1 text-sm font-bold text-gray-800">
+                              {coupon.discountPercent
+                                ? `${coupon.discountPercent}% ছাড়`
+                                : `৳${coupon.discountAmount} ছাড়`}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              সর্বনিম্ন অর্ডার: ৳{coupon.minOrderAmount}
+                            </p>
+                          </div>
+                          <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${coupon.isActive ? 'bg-emerald-200 text-emerald-900' : 'bg-gray-200 text-gray-600'}`}>
+                            {coupon.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCoupon(coupon)}
+                          className={`mt-4 w-full rounded-xl px-3 py-2 text-xs font-bold ${coupon.isActive ? 'bg-white text-red-700 hover:bg-red-50' : 'bg-emerald-700 text-white hover:bg-emerald-800'}`}
+                        >
+                          {coupon.isActive ? 'কুপন বন্ধ করুন' : 'আবার সক্রিয় করুন'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
           )}
 
@@ -2194,16 +2702,121 @@ export default function AdminDashboardPage() {
             <div className="bg-white rounded-3xl border border-stone-200 p-6 space-y-6 w-full">
               <h3 className="text-lg font-bold text-gray-900">ইনকোয়ারি ও কাস্টমার বার্তা</h3>
               <div className="space-y-3">
+                {messages.length === 0 && (
+                  <p className="rounded-xl bg-stone-50 p-5 text-center text-sm text-gray-500">
+                    এখনো কোনো বার্তা আসেনি।
+                  </p>
+                )}
                 {messages.map((m) => (
                   <div key={m.id} className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-1.5">
                     <div className="flex justify-between items-center font-bold text-gray-900">
-                      <span>{m.name} ({m.contact})</span>
-                      <span className="text-[10px] text-gray-400 font-normal">{m.time}</span>
+                      <span>{m.name}</span>
+                      <span className="text-[10px] text-gray-400 font-normal">{new Date(m.createdAt).toLocaleString('bn-BD')}</span>
                     </div>
+                    <p className="font-semibold text-gray-700">{m.emailOrPhone}</p>
+                    {m.subject && <p className="text-gray-500">{m.subject}</p>}
                     <p className="text-gray-700">{m.message}</p>
+                    {!m.emailOrPhone.includes('@') && (
+                      <a href={`tel:${m.emailOrPhone}`} className="inline-flex items-center gap-1 pt-1 font-bold text-emerald-700">
+                        <PhoneCall className="h-3 w-3" /> কল করুন
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* TAB 8: BLOGS */}
+          {activeTab === 'blogs' && (
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+              <form
+                onSubmit={handleCreateBlogPost}
+                className="h-fit space-y-4 rounded-3xl border border-stone-200 bg-white p-6"
+              >
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">নতুন ব্লগ লিখুন</h3>
+                  <p className="mt-1 text-sm text-gray-500">প্রকাশ করলেই লেখাটি হোমপেজের ব্লগ অংশে দেখা যাবে।</p>
+                </div>
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-semibold text-gray-700">শিরোনাম</span>
+                  <input
+                    required
+                    maxLength={180}
+                    value={newBlogTitle}
+                    onChange={(event) => setNewBlogTitle(event.target.value)}
+                    placeholder="ব্লগের শিরোনাম"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-semibold text-gray-700">সংক্ষিপ্ত পরিচিতি</span>
+                  <textarea
+                    required
+                    maxLength={500}
+                    rows={3}
+                    value={newBlogExcerpt}
+                    onChange={(event) => setNewBlogExcerpt(event.target.value)}
+                    placeholder="ব্লগের ছোট পরিচিতি"
+                    className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-semibold text-gray-700">সম্পূর্ণ লেখা</span>
+                  <textarea
+                    required
+                    rows={10}
+                    value={newBlogContent}
+                    onChange={(event) => setNewBlogContent(event.target.value)}
+                    placeholder="এখানে সম্পূর্ণ ব্লগ লিখুন"
+                    className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-6 outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={isSavingBlog}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Plus className="h-4 w-4" />
+                  {isSavingBlog ? 'প্রকাশ হচ্ছে...' : 'ব্লগ প্রকাশ করুন'}
+                </button>
+              </form>
+
+              <section className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">প্রকাশিত ব্লগ</h3>
+                    <p className="mt-1 text-sm text-gray-500">{blogPosts.length} টি লেখা</p>
+                  </div>
+                  <BookOpen className="h-5 w-5 text-emerald-700" />
+                </div>
+                {blogPosts.length === 0 ? (
+                  <p className="rounded-xl bg-stone-50 p-5 text-center text-sm text-gray-500">
+                    এখনো কোনো ব্লগ প্রকাশ করা হয়নি।
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {blogPosts.map((post) => (
+                      <article key={post.id} className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <h4 className="font-bold text-gray-900">{post.title}</h4>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${post.isPublished ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                            {post.isPublished ? 'প্রকাশিত' : 'খসড়া'}
+                          </span>
+                        </div>
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">{post.excerpt}</p>
+                        <Link
+                          href={`/blog/${encodeURIComponent(post.slug)}`}
+                          target="_blank"
+                          className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900"
+                        >
+                          লেখাটি দেখুন <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
           )}
 

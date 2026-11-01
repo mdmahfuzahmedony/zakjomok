@@ -3,23 +3,27 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import HeroBanner from '../components/HeroBanner';
+import BlogSection from '../components/BlogSection';
 import CategorySection from '../components/CategorySection';
 import ProductCard from '../components/ProductCard';
 import SaladSandwichSpecial from '../components/SaladSandwichSpecial';
+import OrderModal from '../components/OrderModal';
+import CartDrawer from '../components/CartDrawer';
 import WhyChooseUs from '../components/WhyChooseUs';
 import ContactSection from '../components/ContactSection';
 import Footer from '../components/Footer';
-import CartDrawer from '../components/CartDrawer';
 import { fetchCategories, fetchProducts } from '../lib/api';
 import { Category, Product, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from '../data/initialProducts';
 import { Search } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 export default function HomePage() {
+  const { cart, subtotal, setIsCartOpen } = useCart();
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -32,8 +36,6 @@ export default function HomePage() {
         setProducts(prods);
       } catch (err) {
         console.error('Error fetching initial data:', err);
-      } finally {
-        setIsLoading(false);
       }
     }
     loadData();
@@ -52,11 +54,26 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-50/30 flex flex-col font-sans">
       <Header />
-      <CartDrawer />
+      <CartDrawer
+        onOrder={() => {
+          setIsCartOpen(false);
+          setIsOrderModalOpen(true);
+        }}
+      />
+      {isOrderModalOpen && (
+        <OrderModal
+          cart={cart}
+          subtotal={subtotal}
+          onClose={() => setIsOrderModalOpen(false)}
+        />
+      )}
 
       <main className="flex-1">
         {/* Hero Banner */}
         <HeroBanner />
+
+        {/* Blog Section */}
+        <BlogSection />
 
         {/* Categories Section */}
         <CategorySection

@@ -1,21 +1,21 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import { Product } from '../data/initialProducts';
 
 export interface CartItem {
   id: string;
   name: string;
-  slug: string;
   price: number;
-  discountPrice?: number | null;
-  packSize?: string | null;
-  imageUrl?: string | null;
+  discountPrice?: number;
+  packSize?: string;
+  imageUrl?: string;
   quantity: number;
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: any, quantity?: number) => void;
+  addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -27,51 +27,24 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('zakjomok_cart');
-      if (saved) {
-        setCart(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error('Failed to load cart from storage', e);
-    }
-    setIsLoaded(true);
-  }, []);
-
-  // Save to localStorage
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('zakjomok_cart', JSON.stringify(cart));
-      } catch (e) {
-        console.error('Failed to save cart to storage', e);
-      }
-    }
-  }, [cart, isLoaded]);
-
-  const addToCart = (product: any, quantity: number = 1) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+  const addToCart = (product: Product, quantity = 1) => {
+    setCart((currentCart) => {
+      const existing = currentCart.find((item) => item.id === product.id);
       if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
+        return currentCart.map((item) =>
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
+
       return [
-        ...prev,
+        ...currentCart,
         {
           id: product.id,
           name: product.name,
-          slug: product.slug,
           price: product.price,
           discountPrice: product.discountPrice,
           packSize: product.packSize,
@@ -84,7 +57,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== productId));
+    setCart((currentCart) => currentCart.filter((item) => item.id !== productId));
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -92,22 +65,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeFromCart(productId);
       return;
     }
-    setCart((prev) =>
-      prev.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      )
+
+    setCart((currentCart) =>
+      currentCart.map((item) => (item.id === productId ? { ...item, quantity } : item))
     );
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  const subtotal = cart.reduce((sum, item) => {
-    const activePrice = item.discountPrice ?? item.price;
-    return sum + activePrice * item.quantity;
-  }, 0);
-
+  const subtotal = cart.reduce(
+    (sum, item) => sum + (item.discountPrice ?? item.price) * item.quantity,
+    0
+  );
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -117,7 +84,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addToCart,
         removeFromCart,
         updateQuantity,
-        clearCart,
+        clearCart: () => setCart([]),
         subtotal,
         totalItems,
         isCartOpen,
@@ -127,12 +94,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </CartContext.Provider>
   );
-};
+}
 
-export const useCart = () => {
+export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;
-};
+}
