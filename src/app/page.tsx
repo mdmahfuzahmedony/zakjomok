@@ -7,7 +7,6 @@ import BlogSection from '../components/BlogSection';
 import CategorySection from '../components/CategorySection';
 import ProductCard from '../components/ProductCard';
 import ProductDetailsModal from '../components/ProductDetailsModal';
-import SaladSandwichSpecial from '../components/SaladSandwichSpecial';
 import OrderModal from '../components/OrderModal';
 import CartDrawer from '../components/CartDrawer';
 import WhyChooseUs from '../components/WhyChooseUs';
@@ -34,8 +33,14 @@ export default function HomePage() {
           fetchCategories(),
           fetchProducts(),
         ]);
-        setCategories(cats);
-        setProducts(prods);
+        if (cats && cats.length > 0) setCategories(cats);
+        // Prioritize our 4 curated healthy salad & meal products
+        if (prods && prods.length > 0) {
+          // If DB has custom products, take up to 4 or merge with initial
+          setProducts(prods.slice(0, 4));
+        } else {
+          setProducts(INITIAL_PRODUCTS);
+        }
       } catch (err) {
         console.error('Error fetching initial data:', err);
       }
@@ -101,24 +106,17 @@ export default function HomePage() {
           onSelectCategory={(slug) => setSelectedCategory(slug)}
         />
 
-        {/* Salad & Sandwich Special Highlight */}
-        <SaladSandwichSpecial
-          products={products}
-          onViewDetails={(prod) => setSelectedDetailProduct(prod)}
-          onOrderNow={(prod) => handleDirectOrder(prod, 1)}
-        />
-
-        {/* All / Filtered Products Section */}
+        {/* All Products Section - 3 Cards Per Row Grid */}
         <section id="products" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
               <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
-                আমাদের খাদ্য তালিকা
+                আমাদের ফ্রেশ খাদ্য সম্ভার
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">
                 {selectedCategory
                   ? `${categories.find((c) => c.slug === selectedCategory)?.name || 'ক্যাটাগরি'} পণ্যসমূহ`
-                  : 'প্রাকৃতিক ও স্বাস্থ্যকর পণ্যসমূহ'}
+                  : 'প্রাকৃতিক ও স্বাস্থ্যকর সালাদ ও মিলস'}
               </h2>
             </div>
 
@@ -126,7 +124,7 @@ export default function HomePage() {
             <div className="relative w-full md:w-72">
               <input
                 type="text"
-                placeholder="পণ্য খুঁজুন (যেমন: বাদাম, ওটস)..."
+                placeholder="পণ্য খুঁজুন (যেমন: সালাদ, স্যান্ডউইচ)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500 shadow-2xs text-gray-800"
@@ -149,7 +147,8 @@ export default function HomePage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            /* 3 cards per row on desktop (lg:grid-cols-3) */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
