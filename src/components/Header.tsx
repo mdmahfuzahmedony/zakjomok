@@ -1,19 +1,63 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Leaf, PhoneCall, Menu, X, User, ShoppingBag, Globe } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  Leaf,
+  PhoneCall,
+  Menu,
+  X,
+  User,
+  ShoppingBag,
+  Globe,
+  LayoutDashboard,
+  Package,
+  Gift,
+  LogOut,
+  Shield,
+  LogIn,
+  UserPlus,
+  ChevronDown,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
-import AccountModal from './AccountModal';
 
 export default function Header() {
-  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth();
   const { totalItems, setIsCartOpen } = useCart();
   const { language, toggleLanguage, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [accountModalOpen, setAccountModalOpen] = useState(false);
+  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicked outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountDropdownOpen(false);
+      }
+    };
+    if (accountDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [accountDropdownOpen]);
+
+  const handleLogout = () => {
+    logout();
+    setAccountDropdownOpen(false);
+    router.push('/');
+  };
+
+  const openCart = () => {
+    setAccountDropdownOpen(false);
+    setIsCartOpen(true);
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-xs border-b border-emerald-100">
@@ -53,7 +97,7 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Desktop Links (Dashboard is inside Account menu as requested) */}
+          {/* Desktop Links */}
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-stone-700">
             <Link href="/" className="text-emerald-700 hover:text-emerald-800 transition-colors">
               {t('হোম', 'Home')}
@@ -72,7 +116,7 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Right Action: Language Switcher, Cart, Account */}
+          {/* Right Action: Language Switcher, Cart, Account Dropdown */}
           <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Language Toggle Button */}
             <button
@@ -102,21 +146,146 @@ export default function Header() {
               )}
             </button>
 
-            {/* Account Button (Opens modal with Dashboard, Orders, Discounts, Logout) */}
-            <button
-              type="button"
-              onClick={() => setAccountModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-100 active:scale-95"
-              aria-haspopup="dialog"
-              aria-label={isAuthenticated ? 'Open account menu' : 'Open login and registration'}
-            >
-              <User className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">
-                {isAuthenticated
-                  ? `${user?.name.split(' ')[0]} (${t('অ্যাকাউন্ট', 'Account')})`
-                  : t('লগইন / সাইনআপ', 'Login / Sign Up')}
-              </span>
-            </button>
+            {/* Account Dropdown Container (Directly below button, NOT center modal) */}
+            <div className="relative" ref={accountRef}>
+              <button
+                type="button"
+                onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-bold transition-all active:scale-95 ${
+                  accountDropdownOpen
+                    ? 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-xs'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                }`}
+                aria-expanded={accountDropdownOpen}
+                aria-haspopup="menu"
+              >
+                <User className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">
+                  {isAuthenticated
+                    ? `${user?.name.split(' ')[0]}`
+                    : t('অ্যাকাউন্ট', 'Account')}
+                </span>
+                <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${accountDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* The Dropdown Menu positioned directly underneath */}
+              {accountDropdownOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-stone-200 bg-white p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150"
+                >
+                  {isAuthenticated ? (
+                    <div>
+                      {/* User Bio Header */}
+                      <div className="p-3 bg-gradient-to-r from-emerald-50 to-stone-50 rounded-xl border border-emerald-100/70 mb-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                            {user?.role === 'ADMIN' ? 'Admin Profile' : t('কাস্টমার প্রোফাইল', 'Customer Profile')}
+                          </p>
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        </div>
+                        <h4 className="font-extrabold text-stone-900 text-sm mt-0.5 truncate">
+                          {user?.name}
+                        </h4>
+                        <p className="text-xs text-stone-500">{user?.phone}</p>
+                      </div>
+
+                      {/* Dropdown Navigation Links */}
+                      <div className="space-y-1">
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 hover:bg-emerald-50 hover:text-emerald-900 transition-colors"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-emerald-700" />
+                          <span>{t('আমার ড্যাশবোর্ড', 'My Dashboard')}</span>
+                        </Link>
+
+                        <Link
+                          href="/dashboard?tab=orders"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors"
+                        >
+                          <Package className="h-4 w-4 text-emerald-700" />
+                          <span>{t('আমার অর্ডারসমূহ', 'My Orders')}</span>
+                        </Link>
+
+                        <Link
+                          href="/dashboard?tab=discounts"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors"
+                        >
+                          <Gift className="h-4 w-4 text-emerald-700" />
+                          <span>{t('অফার ও ভাউচার', 'Offers & Vouchers')}</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={openCart}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-stone-700 hover:bg-emerald-50 hover:text-emerald-900 transition-colors"
+                        >
+                          <ShoppingBag className="h-4 w-4 text-emerald-700" />
+                          <span>{t('শপিং কার্ট', 'Shopping Cart')}</span>
+                        </button>
+
+                        {user?.role === 'ADMIN' && (
+                          <Link
+                            href="/admin/dashboard"
+                            onClick={() => setAccountDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-amber-900 bg-amber-50/80 hover:bg-amber-100 transition-colors"
+                          >
+                            <Shield className="h-4 w-4 text-amber-700" />
+                            <span>{t('অ্যাডমিন প্যানেল', 'Admin Panel')}</span>
+                          </Link>
+                        )}
+
+                        <div className="pt-1.5 border-t border-stone-100">
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors"
+                          >
+                            <LogOut className="h-4 w-4" />
+                            <span>{t('সাইন আউট', 'Sign Out')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Guest User Header */}
+                      <div className="p-3 bg-stone-50 rounded-xl mb-3 border border-stone-100">
+                        <p className="text-xs font-extrabold text-stone-900">
+                          {t('ZaKJomok এ স্বাগতম!', 'Welcome to ZaKJomok!')}
+                        </p>
+                        <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
+                          {t('অর্ডার ট্র্যাক ও কুপন সুবিধা পেতে লগইন করুন।', 'Sign in to track orders and access exclusive coupons.')}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Link
+                          href="/login"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition-colors"
+                        >
+                          <LogIn className="h-4 w-4" />
+                          {t('লগইন করুন', 'Log In')}
+                        </Link>
+                        <Link
+                          href="/register"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-2.5 text-xs font-bold text-stone-800 hover:bg-stone-50 transition-colors"
+                        >
+                          <UserPlus className="h-4 w-4 text-emerald-700" />
+                          {t('নতুন অ্যাকাউন্ট খুলুন', 'Create Account')}
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Mobile menu trigger */}
             <button
@@ -129,7 +298,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-stone-100 flex flex-col gap-2 font-medium text-stone-700">
             <Link
@@ -182,23 +351,48 @@ export default function Header() {
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setAccountModalOpen(true);
-              }}
-              className="mt-2 px-3 py-2.5 text-left rounded-xl bg-emerald-50 text-emerald-800 font-bold flex items-center gap-2"
-            >
-              <User className="h-4 w-4" />
-              {isAuthenticated
-                ? `${t('আমার অ্যাকাউন্ট', 'My Account')} (${user?.name})`
-                : t('লগইন / রেজিস্টার', 'Login / Register')}
-            </button>
+            {isAuthenticated ? (
+              <div className="mt-2 pt-2 border-t border-stone-100 space-y-1">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-900 font-bold flex items-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4 text-emerald-700" />
+                  <span>{t('আমার ড্যাশবোর্ড', 'My Dashboard')} ({user?.name})</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl"
+                >
+                  {t('লগআউট', 'Sign Out')}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-2 pt-2 border-t border-stone-100 grid grid-cols-2 gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-2 text-center rounded-xl bg-emerald-700 text-white font-bold text-xs"
+                >
+                  {t('লগইন', 'Log In')}
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-2 text-center rounded-xl border border-stone-200 bg-white text-stone-800 font-bold text-xs"
+                >
+                  {t('রেজিস্টার', 'Sign Up')}
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
-      <AccountModal isOpen={accountModalOpen} onClose={() => setAccountModalOpen(false)} />
     </header>
   );
 }
