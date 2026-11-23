@@ -61,16 +61,16 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-xs border-b border-emerald-100">
       {/* Top Notification Bar */}
-      <div className="bg-emerald-900 text-emerald-50 text-xs py-1.5 px-4">
+      <div className="bg-emerald-900 text-emerald-50 text-xs py-1.5 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-1 text-center sm:text-left">
-          <p className="flex items-center gap-1.5 justify-center font-medium">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <p className="flex items-center gap-1.5 justify-center font-medium text-[11px] sm:text-xs">
+            <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             {t(
               'প্রাকৃতিক ও স্বাস্থ্যকর খাবার সরাসরি আপনার ঘরে • ক্যাশ অন ডেলিভারি সুবিধা',
               'Natural & Healthy Food Delivered to Your Doorstep • Cash on Delivery'
             )}
           </p>
-          <div className="flex items-center text-emerald-200">
+          <div className="hidden sm:flex items-center text-emerald-200">
             <span className="flex items-center gap-1 text-xs">
               <PhoneCall className="w-3.5 h-3.5 text-emerald-300" /> {t('হটলাইন: ০১৩০৯-৮৩৪৪৮৩', 'Hotline: +8801309834483')}
             </span>
@@ -79,20 +79,20 @@ export default function Header() {
       </div>
 
       {/* Main Navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
             <img
               src="/logo.png"
               alt="ZaKJomok Brand Logo"
-              className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105"
+              className="h-8 sm:h-10 md:h-11 w-auto object-contain transition-transform group-hover:scale-105"
             />
-            <div>
-              <span className="text-2xl font-black tracking-tight text-stone-900">
+            <div className="flex flex-col justify-center">
+              <span className="text-lg sm:text-2xl font-black tracking-tight text-stone-900 leading-none">
                 ZaK<span className="text-emerald-600">Jomok</span>
               </span>
-              <p className="text-[11px] font-semibold text-emerald-700 tracking-wider uppercase -mt-1">
+              <p className="text-[9px] sm:text-[11px] font-semibold text-emerald-700 tracking-wider uppercase mt-0.5">
                 Good Food • Better You
               </p>
             </div>
@@ -118,65 +118,67 @@ export default function Header() {
           </nav>
 
           {/* Right Action: Language Switcher, Cart, Account Dropdown */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             {/* Language Toggle Button */}
             <button
               type="button"
               onClick={toggleLanguage}
-              className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition-all active:scale-95"
-              title={language === 'bn' ? 'Switch to English' : 'বাংলায় পরিবর্তন করুন'}
+              className="inline-flex h-9 items-center justify-center gap-1 rounded-full border border-stone-200 bg-stone-50 px-2 sm:px-3 text-xs font-bold text-stone-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition-all active:scale-95 shrink-0"
+              title={language === 'bn' ? 'Switch to English' : 'বাংলায় পরিবর্তন করুন'}
               aria-label="Change Language"
             >
-              <Globe className="h-3.5 w-3.5 text-emerald-600" />
-              <span>{language === 'bn' ? 'EN' : 'বাংলা'}</span>
+              <Globe className="h-4 w-4 text-emerald-600" />
+              <span className="text-[11px] font-black uppercase">{language === 'bn' ? 'EN' : 'বাং'}</span>
             </button>
 
             {/* Cart Button */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="relative flex items-center gap-2 rounded-full bg-emerald-700 px-3.5 sm:px-4 py-2 font-semibold text-white transition-colors hover:bg-emerald-800 active:scale-95 shadow-xs"
+              className="relative inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-emerald-700 px-2.5 sm:px-4 font-semibold text-white transition-colors hover:bg-emerald-800 active:scale-95 shadow-xs shrink-0"
               aria-label={`${t('কার্ট খুলুন', 'Open cart')}, ${totalItems}`}
+              title={t('শপিং কার্ট', 'Shopping Cart')}
             >
               <ShoppingBag className="h-4 w-4" />
-              <span className="hidden text-xs sm:inline">{t('কার্ট', 'Cart')}</span>
+              <span className="hidden text-xs sm:inline font-bold">{t('কার্ট', 'Cart')}</span>
               {totalItems > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-xs font-black text-emerald-950">
+                <span className="flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] sm:text-xs font-black text-emerald-950">
                   {totalItems}
                 </span>
               )}
             </button>
 
             {/* Account Dropdown Container (Directly below button, NOT center modal) */}
-            <div className="relative" ref={accountRef}>
+            <div className="relative shrink-0" ref={accountRef}>
               <button
                 type="button"
                 onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-bold transition-all active:scale-95 ${
+                className={`inline-flex h-9 items-center justify-center gap-1 rounded-full border px-2.5 sm:px-3.5 text-xs font-bold transition-all active:scale-95 ${
                   accountDropdownOpen
                     ? 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-xs'
                     : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                 }`}
                 aria-expanded={accountDropdownOpen}
                 aria-haspopup="menu"
+                title={isAuthenticated ? user?.name : t('অ্যাকাউন্ট', 'Account')}
               >
-                <User className="h-3.5 w-3.5" />
+                <User className="h-4 w-4" />
                 <span className="hidden sm:inline">
                   {isAuthenticated
                     ? `${user?.name.split(' ')[0]}`
                     : t('অ্যাকাউন্ট', 'Account')}
                 </span>
-                <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${accountDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3 w-3 hidden sm:inline transition-transform duration-200 ${accountDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* The Dropdown Menu positioned directly underneath */}
               {accountDropdownOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-3 w-80 sm:w-84 rounded-2xl border border-stone-200/90 bg-white p-3.5 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150"
+                  className="fixed sm:absolute right-2 sm:right-0 top-18 sm:top-full mt-2 w-[calc(100vw-1.5rem)] max-w-[320px] sm:w-84 rounded-2xl border border-stone-200/90 bg-white p-3.5 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150"
                 >
                   {/* Top Arrow Pointer pointing to button */}
-                  <div className="absolute -top-1.5 right-6 w-3 h-3 bg-white border-t border-l border-stone-200 rotate-45 z-10" />
+                  <div className="hidden sm:block absolute -top-1.5 right-6 w-3 h-3 bg-white border-t border-l border-stone-200 rotate-45 z-10" />
 
                   {isAuthenticated ? (
                     <div>
@@ -294,17 +296,46 @@ export default function Header() {
             {/* Mobile menu trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition-colors shrink-0"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-stone-100 flex flex-col gap-2 font-medium text-stone-700">
+          <div className="md:hidden py-4 border-t border-stone-100 flex flex-col gap-2 font-medium text-stone-700 animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* Mobile Quick Cart & Language Row */}
+            <div className="grid grid-cols-2 gap-2 pb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsCartOpen(true);
+                }}
+                className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-xs"
+              >
+                <span className="flex items-center gap-1.5">
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  <span>{t('কার্ট', 'Cart')}</span>
+                </span>
+                <span className="rounded-full bg-amber-400 text-emerald-950 px-1.5 py-0.2 text-[10px] font-black">
+                  {totalItems}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-stone-200 bg-stone-50 text-stone-800 font-bold text-xs hover:bg-stone-100"
+              >
+                <Globe className="h-3.5 w-3.5 text-emerald-600" />
+                <span>{language === 'bn' ? 'English (EN)' : 'বাংলা (বাং)'}</span>
+              </button>
+            </div>
+
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
@@ -341,29 +372,28 @@ export default function Header() {
               {t('যোগাযোগ', 'Contact')}
             </Link>
 
-            <div className="pt-2 border-t border-stone-100 flex items-center justify-between px-3">
-              <span className="text-xs text-stone-500 font-medium">
-                {t('ভাষা পরিবর্তন:', 'Language:')}
-              </span>
-              <button
-                type="button"
-                onClick={toggleLanguage}
-                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-2xs"
-              >
-                <Globe className="h-3.5 w-3.5 text-emerald-600" />
-                <span>{language === 'bn' ? 'Switch to English' : 'বাংলা করুন'}</span>
-              </button>
-            </div>
-
             {isAuthenticated ? (
               <div className="mt-2 pt-2 border-t border-stone-100 space-y-1">
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-900 font-bold flex items-center gap-2"
+                  className="px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-900 font-bold flex items-center justify-between text-xs"
                 >
-                  <LayoutDashboard className="h-4 w-4 text-emerald-700" />
-                  <span>{t('আমার ড্যাশবোর্ড', 'My Dashboard')} ({user?.name})</span>
+                  <span className="flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4 text-emerald-700" />
+                    <span>{t('আমার ড্যাশবোর্ড', 'My Dashboard')}</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-700 truncate max-w-[120px]">
+                    {user?.name}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard?tab=orders"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl text-stone-700 hover:bg-stone-50 font-semibold flex items-center gap-2 text-xs"
+                >
+                  <Package className="h-4 w-4 text-emerald-700" />
+                  <span>{t('আমার অর্ডারসমূহ', 'My Orders')}</span>
                 </Link>
                 <button
                   type="button"
@@ -381,14 +411,14 @@ export default function Header() {
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 text-center rounded-xl bg-emerald-700 text-white font-bold text-xs"
+                  className="py-2.5 text-center rounded-xl bg-emerald-700 text-white font-bold text-xs"
                 >
                   {t('লগইন', 'Log In')}
                 </Link>
                 <Link
                   href="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 text-center rounded-xl border border-stone-200 bg-white text-stone-800 font-bold text-xs"
+                  className="py-2.5 text-center rounded-xl border border-stone-200 bg-white text-stone-800 font-bold text-xs"
                 >
                   {t('রেজিস্টার', 'Sign Up')}
                 </Link>
