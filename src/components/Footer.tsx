@@ -44,7 +44,7 @@ export default function Footer() {
               </p>
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400" />
-                <span>{t('ঢাকা ও যশোর, বাংলাদেশ', 'Dhaka & Jashore, Bangladesh')}</span>
+                <span>{t('যশোর, বাংলাদেশ', 'Jashore, Bangladesh')}</span>
               </p>
             </div>
           </div>
