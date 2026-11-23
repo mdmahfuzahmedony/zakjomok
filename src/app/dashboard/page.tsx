@@ -31,7 +31,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://zakjomok-backend.vercel.app').replace(/\/$/, '');
 
 interface UserOrder {
   id: string;

@@ -44,7 +44,7 @@ import { Product, Category } from '../../../data/initialProducts';
 import { useAuth } from '../../../context/AuthContext';
 import AdminImageUpload from '../../../components/AdminImageUpload';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://zakjomok-backend.vercel.app').replace(/\/$/, '');
 
 interface AdminOrder {
   id: string;

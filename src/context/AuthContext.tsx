@@ -34,7 +34,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://zakjomok-backend.vercel.app').replace(/\/$/, '');
 
 interface AuthResponse {
   success: boolean;
