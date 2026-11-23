@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Hind_Siliguri } from "next/font/google";
+import { Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { Providers } from "../components/Providers";
 
-const hindSiliguri = Hind_Siliguri({
+const notoSansBengali = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-hind-siliguri",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-noto-sans-bengali",
   display: "swap",
 });
 
@@ -21,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className={`h-full antialiased scroll-smooth ${hindSiliguri.variable}`}>
-      <body className={`${hindSiliguri.className} min-h-full flex flex-col font-sans bg-[#fbfdfb] text-stone-900`}>
+    <html lang="bn" className={`h-full antialiased scroll-smooth ${notoSansBengali.variable}`}>
+      <body className={`${notoSansBengali.className} min-h-full flex flex-col font-sans bg-[#fbfdfb] text-stone-900`}>
         <Providers>{children}</Providers>
       </body>
     </html>
