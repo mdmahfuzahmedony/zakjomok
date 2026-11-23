@@ -49,13 +49,13 @@ export default function ProductCard({
 
   return (
     <>
-      <article className="group flex flex-col overflow-hidden rounded-3xl border border-stone-200/90 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-400 hover:shadow-xl">
+      <article className="flex flex-col overflow-hidden rounded-3xl border border-stone-200/90 bg-white shadow-xs">
         {/* Compact Product Image */}
         <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-stone-100">
           <img
             src={validImageUrl}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover"
             loading="lazy"
           />
 
@@ -98,7 +98,7 @@ export default function ProductCard({
             </span>
 
             {/* Product Title */}
-            <h3 className="mt-2 text-base sm:text-lg font-bold text-stone-900 group-hover:text-emerald-800 transition-colors line-clamp-1 leading-snug">
+            <h3 className="mt-2 text-base sm:text-lg font-bold text-stone-900 line-clamp-1 leading-snug">
               {product.name}
             </h3>
 

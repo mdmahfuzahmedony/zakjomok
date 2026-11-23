@@ -50,13 +50,13 @@ export default function CategorySection({
               <button
                 key={cat.id}
                 onClick={() => onSelectCategory(isSelected ? null : cat.slug)}
-                className={`group text-left p-3 sm:p-4 rounded-2xl transition-all flex flex-col items-center text-center border shrink-0 w-28 sm:w-auto snap-start active:scale-95 ${
+                className={`text-left p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center border shrink-0 w-28 sm:w-auto snap-start ${
                   isSelected
-                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-md scale-102 sm:scale-105'
-                    : 'bg-stone-50/70 hover:bg-emerald-50/70 text-stone-800 border-stone-200/80 hover:border-emerald-300 shadow-2xs'
+                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-sm'
+                    : 'bg-stone-50/70 text-stone-800 border-stone-200/80 shadow-2xs'
                 }`}
               >
-                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden mb-2.5 sm:mb-3 bg-white border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden mb-2.5 sm:mb-3 bg-white border-2 border-white shadow-xs">
                   <img
                     src={cat.imageUrl}
                     alt={cat.name}
@@ -66,7 +66,7 @@ export default function CategorySection({
                 </div>
                 <h3
                   className={`text-xs font-bold line-clamp-2 leading-tight ${
-                    isSelected ? 'text-white' : 'text-stone-900 group-hover:text-emerald-900'
+                    isSelected ? 'text-white' : 'text-stone-900'
                   }`}
                 >
                   {cat.name}

@@ -49,16 +49,16 @@ export default function WhyChooseUs() {
           {pillars.map((p, idx) => (
             <div
               key={idx}
-              className="group bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1"
+              className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between"
             >
               <div>
-                <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center mb-5 shadow-md shadow-emerald-700/20 group-hover:scale-105 transition-transform">
+                <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center mb-5 shadow-md shadow-emerald-700/20">
                   {p.icon}
                 </div>
                 <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mb-2">
                   {p.tag}
                 </span>
-                <h3 className="text-base font-bold text-stone-900 group-hover:text-emerald-800 transition-colors">
+                <h3 className="text-base font-bold text-stone-900">
                   {p.title}
                 </h3>
                 <p className="text-xs text-stone-600 mt-2 leading-relaxed">
