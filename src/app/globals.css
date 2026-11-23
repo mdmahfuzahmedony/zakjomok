@@ -8,7 +8,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-noto-sans-bengali), "Noto Sans Bengali", system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-hind-siliguri), "Hind Siliguri", "Noto Sans Bengali", system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono, monospace);
 }
 
@@ -19,7 +19,7 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-noto-sans-bengali), "Noto Sans Bengali", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-hind-siliguri), "Hind Siliguri", "Noto Sans Bengali", system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
