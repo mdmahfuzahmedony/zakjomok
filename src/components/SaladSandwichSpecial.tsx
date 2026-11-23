@@ -1,15 +1,21 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { Sparkles, CheckCircle2, ShoppingBag, Eye, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Product } from '../data/initialProducts';
 
 interface SaladSandwichProps {
   products: Product[];
+  onViewDetails?: (product: Product) => void;
+  onOrderNow?: (product: Product) => void;
 }
 
-export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
+export default function SaladSandwichSpecial({
+  products,
+  onViewDetails,
+  onOrderNow,
+}: SaladSandwichProps) {
   const { addToCart } = useCart();
   // Find the salad and sandwich products
   const salad = products.find((p) => p.slug.includes('salad'));
@@ -77,10 +83,19 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
                     <span>জিরো প্রিজারভেটিভস</span>
                   </div>
                 </div>
+
+                {salad && (
+                  <button
+                    onClick={() => onViewDetails?.(salad)}
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white underline underline-offset-4 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" /> বিস্তারিত উপকরণ ও পুষ্টিগুণ দেখুন
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between">
+            <div className="mt-8 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-2xl font-black text-emerald-300">
                   ৳{salad ? (salad.discountPrice || salad.price) : 150}
@@ -90,13 +105,22 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
                 )}
               </div>
               {salad && (
-                <button
-                  onClick={() => addToCart(salad)}
-                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all hover:scale-105 shadow-md shadow-emerald-500/20"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  কার্টে যোগ করুন
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onOrderNow ? onOrderNow(salad) : addToCart(salad)}
+                    className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    অর্ডার করুন
+                  </button>
+                  <button
+                    onClick={() => addToCart(salad)}
+                    className="px-3 py-2.5 bg-white/20 hover:bg-white/30 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all"
+                    title="কার্টে যোগ করুন"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -142,10 +166,19 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
                     <span>হাতে প্রস্তুতকৃত সতেজতা</span>
                   </div>
                 </div>
+
+                {sandwich && (
+                  <button
+                    onClick={() => onViewDetails?.(sandwich)}
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white underline underline-offset-4 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" /> বিস্তারিত উপকরণ ও পুষ্টিগুণ দেখুন
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between">
+            <div className="mt-8 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-2xl font-black text-emerald-300">
                   ৳{sandwich ? (sandwich.discountPrice || sandwich.price) : 120}
@@ -155,13 +188,22 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
                 )}
               </div>
               {sandwich && (
-                <button
-                  onClick={() => addToCart(sandwich)}
-                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all hover:scale-105 shadow-md shadow-emerald-500/20"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  কার্টে যোগ করুন
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onOrderNow ? onOrderNow(sandwich) : addToCart(sandwich)}
+                    className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    অর্ডার করুন
+                  </button>
+                  <button
+                    onClick={() => addToCart(sandwich)}
+                    className="px-3 py-2.5 bg-white/20 hover:bg-white/30 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all"
+                    title="কার্টে যোগ করুন"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -6,6 +6,7 @@ import HeroBanner from '../components/HeroBanner';
 import BlogSection from '../components/BlogSection';
 import CategorySection from '../components/CategorySection';
 import ProductCard from '../components/ProductCard';
+import ProductDetailsModal from '../components/ProductDetailsModal';
 import SaladSandwichSpecial from '../components/SaladSandwichSpecial';
 import OrderModal from '../components/OrderModal';
 import CartDrawer from '../components/CartDrawer';
@@ -18,12 +19,13 @@ import { Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 export default function HomePage() {
-  const { cart, subtotal, setIsCartOpen } = useCart();
+  const { cart, subtotal, setIsCartOpen, addToCart } = useCart();
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedDetailProduct, setSelectedDetailProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -40,6 +42,15 @@ export default function HomePage() {
     }
     loadData();
   }, []);
+
+  // Direct checkout action for 1-click orders from ProductCard or ProductDetailsModal
+  const handleDirectOrder = (product: Product, quantity: number = 1) => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+    setSelectedDetailProduct(null);
+    setIsOrderModalOpen(true);
+  };
 
   // Filter products based on search and selected category
   const filteredProducts = products.filter((p) => {
@@ -68,6 +79,14 @@ export default function HomePage() {
         />
       )}
 
+      {/* Product Details & Health Benefit Popup Modal */}
+      <ProductDetailsModal
+        product={selectedDetailProduct}
+        isOpen={Boolean(selectedDetailProduct)}
+        onClose={() => setSelectedDetailProduct(null)}
+        onOrderNow={(prod, qty) => handleDirectOrder(prod, qty)}
+      />
+
       <main className="flex-1">
         {/* Hero Banner */}
         <HeroBanner />
@@ -83,7 +102,11 @@ export default function HomePage() {
         />
 
         {/* Salad & Sandwich Special Highlight */}
-        <SaladSandwichSpecial products={products} />
+        <SaladSandwichSpecial
+          products={products}
+          onViewDetails={(prod) => setSelectedDetailProduct(prod)}
+          onOrderNow={(prod) => handleDirectOrder(prod, 1)}
+        />
 
         {/* All / Filtered Products Section */}
         <section id="products" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -128,7 +151,12 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onViewDetails={(prod) => setSelectedDetailProduct(prod)}
+                  onOrderNow={(prod) => handleDirectOrder(prod, 1)}
+                />
               ))}
             </div>
           )}
