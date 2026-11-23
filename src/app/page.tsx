@@ -34,9 +34,19 @@ export default function HomePage() {
           fetchProducts(),
         ]);
         if (cats && cats.length > 0) setCategories(cats);
-        // Prioritize our curated healthy meal & salad products
+        // Always prioritize the 4 mouth-watering healthy salad & meal products
         if (prods && prods.length > 0) {
-          setProducts(prods.slice(0, 4));
+          const freshMeals = prods.filter(
+            (p) =>
+              p.categorySlug === 'fresh-meals' ||
+              p.slug.includes('salad') ||
+              p.slug.includes('sandwich')
+          );
+          if (freshMeals.length >= 4) {
+            setProducts(freshMeals.slice(0, 4));
+          } else {
+            setProducts(INITIAL_PRODUCTS);
+          }
         } else {
           setProducts(INITIAL_PRODUCTS);
         }
@@ -67,7 +77,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen bg-stone-50/30 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fbfdfb] flex flex-col font-sans text-stone-900">
       <Header />
       <CartDrawer
         onOrder={() => {
@@ -106,58 +116,63 @@ export default function HomePage() {
         />
 
         {/* 4. খাদ্য সম্ভার / প্রোডাক্ট (Products Section - 3 Cards Per Row Grid) */}
-        <section id="products" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-            <div>
-              <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
-                আমাদের ফ্রেশ খাদ্য সম্ভার
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">
-                {selectedCategory
-                  ? `${categories.find((c) => c.slug === selectedCategory)?.name || 'ক্যাটাগরি'} পণ্যসমূহ`
-                  : 'প্রাকৃতিক ও স্বাস্থ্যকর সালাদ ও মিলস'}
-              </h2>
-            </div>
+        <section id="products" className="py-16 sm:py-20 bg-stone-50/50 border-b border-stone-200/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-4">
+              <div>
+                <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                  আমাদের ফ্রেশ খাদ্য সম্ভার
+                </span>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 mt-1">
+                  {selectedCategory
+                    ? `${categories.find((c) => c.slug === selectedCategory)?.name || 'ক্যাটাগরি'} পণ্যসমূহ`
+                    : 'প্রাকৃতিক ও স্বাস্থ্যকর সালাদ ও মিলস'}
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                  প্রতিদিন সকালে সংগৃহীত সতেজ উপাদান ও কোল্ড-প্রেসড অলিভ অয়েলে প্রস্তুত।
+                </p>
+              </div>
 
-            {/* Search Input */}
-            <div className="relative w-full md:w-72">
-              <input
-                type="text"
-                placeholder="পণ্য খুঁজুন (যেমন: সালাদ, স্যান্ডউইচ)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500 shadow-2xs text-gray-800"
-              />
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-            </div>
-          </div>
-
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
-              <p className="text-gray-500 text-base font-semibold">কোনো পণ্য পাওয়া যায়নি!</p>
-              <button
-                onClick={() => {
-                  setSelectedCategory(null);
-                  setSearchQuery('');
-                }}
-                className="mt-4 px-5 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold"
-              >
-                সব পণ্য রিসেট করুন
-              </button>
-            </div>
-          ) : (
-            /* 3 cards per row on desktop (lg:grid-cols-3) */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onViewDetails={(prod) => setSelectedDetailProduct(prod)}
-                  onOrderNow={(prod) => handleDirectOrder(prod, 1)}
+              {/* Search Input */}
+              <div className="relative w-full md:w-72">
+                <input
+                  type="text"
+                  placeholder="পণ্য খুঁজুন (যেমন: সালাদ, স্যান্ডউইচ)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500 shadow-2xs text-stone-800"
                 />
-              ))}
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+              </div>
             </div>
-          )}
+
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-stone-200">
+                <p className="text-stone-500 text-base font-semibold">কোনো পণ্য পাওয়া যায়নি!</p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSearchQuery('');
+                  }}
+                  className="mt-4 px-5 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold shadow-xs hover:bg-emerald-700"
+                >
+                  সব পণ্য রিসেট করুন
+                </button>
+              </div>
+            ) : (
+              /* 3 cards per row on desktop (lg:grid-cols-3) */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onViewDetails={(prod) => setSelectedDetailProduct(prod)}
+                    onOrderNow={(prod) => handleDirectOrder(prod, 1)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* 5. ব্লগ (Blog Section) */}
