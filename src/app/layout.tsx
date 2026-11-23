@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "ZakJomok — Good Food • Better You | প্রাকৃতিক ও স্বাস্থ্যকর খাবার",
   description: "প্রাকৃতিক বাদাম, পুষ্টিকর সিডস, ওটস, ফ্রেশ মিক্সড সালাদ ও হোল হুইট স্যান্ডউইচ এর বিশ্বস্ত ই-কমার্স প্ল্যাটফর্ম। ক্যাশ অন ডেলিভারি সুবিধা।",
   icons: {
-    icon: "/logo.jpg",
+    icon: "/logo.png",
   },
 };
 

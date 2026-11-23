@@ -82,10 +82,12 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-[#1e1e24] border border-stone-800 shadow-md shadow-stone-900/10 flex items-center justify-center overflow-hidden p-1 group-hover:scale-105 transition-transform">
-              <img src="/logo.jpg" alt="ZaKJomok Brand Logo" className="w-full h-full object-contain" />
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <img
+              src="/logo.png"
+              alt="ZaKJomok Brand Logo"
+              className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105"
+            />
             <div>
               <span className="text-2xl font-black tracking-tight text-stone-900">
                 ZaK<span className="text-emerald-600">Jomok</span>

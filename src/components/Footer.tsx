@@ -15,9 +15,11 @@ export default function Footer() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-[#1e1e24] border border-stone-800 flex items-center justify-center overflow-hidden p-0.5">
-                <img src="/logo.jpg" alt="ZaKJomok Brand Logo" className="w-full h-full object-contain" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="ZaKJomok Brand Logo"
+                className="h-9 w-auto object-contain"
+              />
               <div>
                 <span className="text-xl font-black text-white">
                   ZaK<span className="text-emerald-400">Jomok</span>
