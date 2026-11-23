@@ -60,7 +60,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-xs border-b border-emerald-100">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-xs border-b border-emerald-100">
       {/* Top Notification Bar */}
       <div className="bg-emerald-900 text-emerald-50 text-xs py-1.5 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-1 text-center sm:text-left">
@@ -172,8 +172,11 @@ export default function Header() {
               {accountDropdownOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-stone-200 bg-white p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150"
+                  className="absolute right-0 top-full mt-3 w-80 sm:w-84 rounded-2xl border border-stone-200/90 bg-white p-3.5 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150"
                 >
+                  {/* Top Arrow Pointer pointing to button */}
+                  <div className="absolute -top-1.5 right-6 w-3 h-3 bg-white border-t border-l border-stone-200 rotate-45 z-10" />
+
                   {isAuthenticated ? (
                     <div>
                       {/* User Bio Header */}
