@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ContactSection() {
+  const { t } = useLanguage();
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://zakjomok-backend.vercel.app').replace(/\/$/, '');
   const [name, setName] = useState('');
   const [emailOrPhone, setEmailOrPhone] = useState('');
@@ -46,13 +48,16 @@ export default function ContactSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
-            সরাসরি যোগাযোগ
+            {t('সরাসরি যোগাযোগ', 'Direct Contact')}
           </span>
-          <h2 className="text-3xl font-extrabold text-gray-900 mt-1">
-            যেকোনো প্রশ্ন বা স্পেশাল অর্ডারে আমরা আছি পাশে
+          <h2 className="text-3xl font-extrabold text-stone-900 mt-1">
+            {t('যেকোনো প্রশ্ন বা স্পেশাল অর্ডারে আমরা আছি পাশে', 'We Are Here for Questions & Custom Orders')}
           </h2>
-          <p className="text-gray-500 text-xs sm:text-sm mt-2">
-            খাবার সম্পর্কে পরামর্শ, বাল্ক অর্ডার বা যেকোনো তথ্যে সরাসরি কল করুন অথবা নিচের ফর্মটি পূরণ করুন।
+          <p className="text-stone-500 text-xs sm:text-sm mt-2">
+            {t(
+              'খাবার সম্পর্কে পরামর্শ, বাল্ক অর্ডার বা যেকোনো তথ্যে সরাসরি কল করুন অথবা নিচের ফর্মটি পূরণ করুন।',
+              'For nutrition advice, party or bulk meal orders, call us directly or drop a message.'
+            )}
           </p>
         </div>
 

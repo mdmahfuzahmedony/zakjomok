@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, BookOpen, Clock, Sparkles } from 'lucide-react';
 import { BlogPostSummary, fetchBlogs } from '../lib/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HealthTipItem {
   id: string;
@@ -49,6 +50,7 @@ const DEFAULT_BLOG_POSTS: HealthTipItem[] = [
 ];
 
 export default function BlogSection() {
+  const { t } = useLanguage();
   const [posts, setPosts] = useState<BlogPostSummary[]>([]);
 
   useEffect(() => {
@@ -73,13 +75,16 @@ export default function BlogSection() {
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/80 px-3 py-1 text-xs font-bold text-emerald-800 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>স্বাস্থ্য টিপস ও গাইড</span>
+              <span>{t('স্বাস্থ্য টিপস ও গাইড', 'Health Tips & Guides')}</span>
             </div>
             <h2 className="text-2xl font-extrabold text-stone-900 sm:text-3xl lg:text-4xl">
-              স্বাস্থ্যকর জীবন নিয়ে পড়ুন
+              {t('স্বাস্থ্যকর জীবন নিয়ে পড়ুন', 'Read About Healthy Living')}
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-stone-600">
-              দৈনন্দিন পুষ্টি, খাদ্যাভ্যাস ও দীর্ঘমেয়াদী সুস্থ জীবনযাপনের সহজ বিজ্ঞানসম্মত টিপস।
+              {t(
+                'দৈনন্দিন পুষ্টি, খাদ্যাভ্যাস ও দীর্ঘমেয়াদী সুস্থ জীবনযাপনের সহজ বিজ্ঞানসম্মত টিপস।',
+                'Simple science-backed tips on daily nutrition, mindful eating and sustainable healthy living.'
+              )}
             </p>
           </div>
           <div className="hidden h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100/70 text-emerald-800 sm:flex">

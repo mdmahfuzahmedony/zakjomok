@@ -20,6 +20,7 @@ import {
 import { Product } from '../data/initialProducts';
 import { getProductHealthInfo } from '../data/productHealthInfo';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -35,6 +36,7 @@ export default function ProductDetailsModal({
   onOrderNow,
 }: ProductDetailsModalProps) {
   const { addToCart } = useCart();
+  const { t } = useLanguage();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'all' | 'ingredients' | 'nutrition' | 'benefits' | 'cautions'>('all');
 
@@ -139,7 +141,7 @@ export default function ProductDetailsModal({
                   <span className="text-sm font-medium text-stone-400 line-through">৳{product.price}</span>
                 )}
                 <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  স্টক: {product.stock > 0 ? `${product.stock} টি উপলব্ধ` : 'স্টক শেষ'}
+                  {t('স্টক:', 'Stock:')} {product.stock > 0 ? `${product.stock} ${t('টি উপলব্ধ', 'available')}` : t('স্টক শেষ', 'Out of Stock')}
                 </span>
               </div>
             </div>
@@ -148,11 +150,11 @@ export default function ProductDetailsModal({
           {/* Quick Section Filter Chips */}
           <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-2 border-t border-emerald-100/60">
             {[
-              { id: 'all', label: 'সব তথ্য', icon: Sparkles },
-              { id: 'ingredients', label: 'কী দিয়ে তৈরি (উপকরণ)', icon: Salad },
-              { id: 'nutrition', label: 'পুষ্টিগুণ ও এনার্জি', icon: Zap },
-              { id: 'benefits', label: 'উপকারিতা', icon: HeartPulse },
-              { id: 'cautions', label: 'কাদের খাওয়া নিষেধ / সতর্কতা', icon: AlertTriangle },
+              { id: 'all', label: t('সব তথ্য', 'All Info'), icon: Sparkles },
+              { id: 'ingredients', label: t('কী দিয়ে তৈরি (উপকরণ)', 'Ingredients'), icon: Salad },
+              { id: 'nutrition', label: t('পুষ্টিগুণ ও এনার্জি', 'Nutrition Facts'), icon: Zap },
+              { id: 'benefits', label: t('উপকারিতা', 'Health Benefits'), icon: HeartPulse },
+              { id: 'cautions', label: t('কাদের খাওয়া নিষেধ / সতর্কতা', 'Who Should Avoid / Caution'), icon: AlertTriangle },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -373,7 +375,7 @@ export default function ProductDetailsModal({
               </div>
 
               <div>
-                <span className="block text-[11px] font-medium text-stone-500">মোট মূল্য:</span>
+                <span className="block text-[11px] font-medium text-stone-500">{t('মোট মূল্য:', 'Total Price:')}</span>
                 <span className="text-xl font-black text-emerald-800">
                   ৳{activePrice * quantity}
                 </span>
@@ -386,14 +388,14 @@ export default function ProductDetailsModal({
                 onClick={handleAddToCart}
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-white px-4 py-3 text-xs sm:text-sm font-bold text-emerald-800 shadow-2xs transition-all hover:bg-emerald-50 active:scale-95"
               >
-                <ShoppingBag className="h-4 w-4" /> কার্টে যোগ করুন
+                <ShoppingBag className="h-4 w-4" /> {t('কার্টে যোগ করুন', 'Add to Cart')}
               </button>
 
               <button
                 onClick={handleOrderNow}
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 py-3 text-xs sm:text-sm font-extrabold text-white shadow-md shadow-emerald-900/20 transition-all hover:from-emerald-700 hover:to-emerald-800 active:scale-95"
               >
-                সরাসরি অর্ডার করুন <ArrowRight className="h-4 w-4" />
+                {t('সরাসরি অর্ডার করুন', 'Order Directly')} <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>

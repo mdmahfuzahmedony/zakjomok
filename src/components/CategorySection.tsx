@@ -3,6 +3,7 @@
 import React from 'react';
 import { Category } from '../data/initialProducts';
 import { LayoutGrid } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CategorySectionProps {
   categories: Category[];
@@ -15,6 +16,7 @@ export default function CategorySection({
   selectedCategory,
   onSelectCategory,
 }: CategorySectionProps) {
+  const { t } = useLanguage();
   return (
     <section className="py-12 sm:py-16 bg-white border-b border-stone-200/60 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,10 +24,10 @@ export default function CategorySection({
         <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
           <div>
             <span className="text-emerald-700 text-[11px] font-bold uppercase tracking-wider">
-              খাদ্য ক্যাটাগরি
+              {t('খাদ্য ক্যাটাগরি', 'Food Categories')}
             </span>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900 mt-0.5">
-              পছন্দের খাবার বেছে নিন
+              {t('পছন্দের খাবার বেছে নিন', 'Choose Your Favorite Food')}
             </h2>
           </div>
 
@@ -38,7 +40,7 @@ export default function CategorySection({
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            সব (All)
+            {t('সব (All)', 'All')}
           </button>
         </div>
 

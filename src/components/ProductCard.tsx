@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../data/initialProducts';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import ProductDetailsModal from './ProductDetailsModal';
 
 interface ProductCardProps {
@@ -25,6 +26,7 @@ export default function ProductCard({
   onOrderNow,
 }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { t } = useLanguage();
   const [isInternalModalOpen, setIsInternalModalOpen] = useState(false);
 
   const activePrice = product.discountPrice ?? product.price;
@@ -63,12 +65,12 @@ export default function ProductCard({
           <div className="absolute left-3 top-3 flex items-center gap-1.5 z-10">
             {hasDiscount && (
               <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-black text-white shadow-xs">
-                ৳{product.price - (product.discountPrice ?? 0)} ছাড়
+                ৳{product.price - (product.discountPrice ?? 0)} {t('ছাড়', 'OFF')}
               </span>
             )}
             {product.isFeatured && (
               <span className="rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 shadow-xs backdrop-blur">
-                ★ সেরা পছন্দ
+                {t('★ সেরা পছন্দ', '★ Featured')}
               </span>
             )}
           </div>
@@ -108,7 +110,7 @@ export default function ProductCard({
               className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100 hover:text-emerald-950"
             >
               <Eye className="h-3.5 w-3.5 text-emerald-600" />
-              বিস্তারিত দেখুন (উপকরণ ও পুষ্টি)
+              {t('বিস্তারিত দেখুন (উপকরণ ও পুষ্টি)', 'View Details (Ingredients & Nutrition)')}
             </button>
           </div>
 
@@ -134,13 +136,13 @@ export default function ProductCard({
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-3.5 py-2.5 text-xs font-black text-white shadow-xs shadow-emerald-900/10 transition-all hover:from-emerald-700 hover:to-emerald-800 active:scale-95"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
-                  অর্ডার করুন
+                  {t('অর্ডার করুন', 'Order Now')}
                 </button>
 
                 <button
                   onClick={() => addToCart(product)}
-                  title="কার্টে যোগ করুন"
-                  aria-label="কার্টে যোগ করুন"
+                  title={t('কার্টে যোগ করুন', 'Add to Cart')}
+                  aria-label={t('কার্টে যোগ করুন', 'Add to Cart')}
                   className="rounded-xl border border-stone-200 bg-white p-2.5 text-stone-700 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 active:scale-95"
                 >
                   <ShoppingBag className="h-4 w-4" />

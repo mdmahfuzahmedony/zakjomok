@@ -7,17 +7,20 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   Gift,
+  LayoutDashboard,
   LockKeyhole,
   LogOut,
   MapPin,
   Package,
   Phone,
+  Shield,
   ShoppingBag,
   UserRound,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -28,6 +31,7 @@ export default function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const router = useRouter();
   const { user, isAuthenticated, login, register, logout } = useAuth();
   const { setIsCartOpen } = useCart();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -106,7 +110,7 @@ export default function AccountModal({ isOpen, onClose }: AccountModalProps) {
         {isAuthenticated ? (
           <>
             <div className="mb-6 pr-8">
-              <p className="text-sm font-semibold text-emerald-700">আপনার অ্যাকাউন্ট</p>
+              <p className="text-sm font-semibold text-emerald-700">{t('আপনার অ্যাকাউন্ট', 'Your Account')}</p>
               <h2 id="account-modal-title" className="mt-1 text-xl font-black text-gray-900">
                 {user?.name}
               </h2>
@@ -114,37 +118,55 @@ export default function AccountModal({ isOpen, onClose }: AccountModalProps) {
             </div>
 
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={openCart}
-                className="flex w-full items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 text-left font-semibold text-gray-800 hover:border-emerald-200 hover:bg-emerald-50"
+              <Link
+                href="/dashboard"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 font-bold text-emerald-900 hover:bg-emerald-100 transition-colors"
               >
-                <ShoppingBag className="h-5 w-5 text-emerald-700" />
-                কার্ট
-              </button>
+                <LayoutDashboard className="h-5 w-5 text-emerald-700" />
+                {t('আমার ড্যাশবোর্ড', 'My Dashboard')}
+              </Link>
               <Link
                 href="/dashboard?tab=orders"
                 onClick={onClose}
-                className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 font-semibold text-gray-800 hover:border-emerald-200 hover:bg-emerald-50"
+                className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 font-semibold text-gray-800 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
               >
                 <Package className="h-5 w-5 text-emerald-700" />
-                আমার অর্ডার
+                {t('আমার অর্ডারসমূহ', 'My Orders')}
               </Link>
               <Link
                 href="/dashboard?tab=discounts"
                 onClick={onClose}
-                className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 font-semibold text-gray-800 hover:border-emerald-200 hover:bg-emerald-50"
+                className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 font-semibold text-gray-800 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
               >
                 <Gift className="h-5 w-5 text-emerald-700" />
-                অফার ও কুপন
+                {t('অফার ও কুপন', 'Offers & Coupons')}
               </Link>
               <button
                 type="button"
+                onClick={openCart}
+                className="flex w-full items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 text-left font-semibold text-gray-800 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
+              >
+                <ShoppingBag className="h-5 w-5 text-emerald-700" />
+                {t('শপিং কার্ট', 'Shopping Cart')}
+              </button>
+              {user?.role === 'ADMIN' && (
+                <Link
+                  href="/admin/dashboard"
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 font-bold text-amber-900 hover:bg-amber-100 transition-colors"
+                >
+                  <Shield className="h-5 w-5 text-amber-700" />
+                  {t('অ্যাডমিন প্যানেল', 'Admin Panel')}
+                </Link>
+              )}
+              <button
+                type="button"
                 onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-xl border border-red-100 px-4 py-3 text-left font-semibold text-red-700 hover:bg-red-50"
+                className="flex w-full items-center gap-3 rounded-xl border border-red-100 px-4 py-3 text-left font-semibold text-red-700 hover:bg-red-50 transition-colors"
               >
                 <LogOut className="h-5 w-5" />
-                সাইন আউট
+                {t('সাইন আউট', 'Sign Out')}
               </button>
             </div>
           </>

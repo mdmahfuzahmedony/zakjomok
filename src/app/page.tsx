@@ -16,9 +16,11 @@ import { fetchCategories, fetchProducts } from '../lib/api';
 import { Category, Product, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from '../data/initialProducts';
 import { Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function HomePage() {
   const { cart, subtotal, setIsCartOpen, addToCart } = useCart();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -121,15 +123,18 @@ export default function HomePage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-4">
               <div>
                 <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
-                  আমাদের ফ্রেশ খাদ্য সম্ভার
+                  {t('আমাদের ফ্রেশ খাদ্য সম্ভার', 'Our Fresh Food Menu')}
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 mt-1">
                   {selectedCategory
-                    ? `${categories.find((c) => c.slug === selectedCategory)?.name || 'ক্যাটাগরি'} পণ্যসমূহ`
-                    : 'প্রাকৃতিক ও স্বাস্থ্যকর সালাদ ও মিলস'}
+                    ? `${categories.find((c) => c.slug === selectedCategory)?.name || t('ক্যাটাগরি', 'Category')} ${t('পণ্যসমূহ', 'Items')}`
+                    : t('প্রাকৃতিক ও স্বাস্থ্যকর সালাদ ও মিলস', 'Natural & Healthy Salads & Meals')}
                 </h2>
                 <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                  প্রতিদিন সকালে সংগৃহীত সতেজ উপাদান ও কোল্ড-প্রেসড অলিভ অয়েলে প্রস্তুত।
+                  {t(
+                    'প্রতিদিন সকালে সংগৃহীত সতেজ উপাদান ও কোল্ড-প্রেসড অলিভ অয়েলে প্রস্তুত।',
+                    'Prepared fresh every morning with organic ingredients and cold-pressed olive oil.'
+                  )}
                 </p>
               </div>
 
@@ -137,7 +142,7 @@ export default function HomePage() {
               <div className="relative w-full md:w-72">
                 <input
                   type="text"
-                  placeholder="পণ্য খুঁজুন (যেমন: সালাদ, স্যান্ডউইচ)..."
+                  placeholder={t('পণ্য খুঁজুন (যেমন: সালাদ, স্যান্ডউইচ)...', 'Search food (e.g. salad, sandwich)...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500 shadow-2xs text-stone-800"
@@ -148,7 +153,7 @@ export default function HomePage() {
 
             {filteredProducts.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-stone-200">
-                <p className="text-stone-500 text-base font-semibold">কোনো পণ্য পাওয়া যায়নি!</p>
+                <p className="text-stone-500 text-base font-semibold">{t('কোনো পণ্য পাওয়া যায়নি!', 'No products found!')}</p>
                 <button
                   onClick={() => {
                     setSelectedCategory(null);
@@ -156,7 +161,7 @@ export default function HomePage() {
                   }}
                   className="mt-4 px-5 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold shadow-xs hover:bg-emerald-700"
                 >
-                  সব পণ্য রিসেট করুন
+                  {t('সব পণ্য রিসেট করুন', 'Reset All Products')}
                 </button>
               </div>
             ) : (
