@@ -3,15 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import HeroBanner from '../components/HeroBanner';
-import BlogSection from '../components/BlogSection';
+import WhyChooseUs from '../components/WhyChooseUs';
 import CategorySection from '../components/CategorySection';
 import ProductCard from '../components/ProductCard';
 import ProductDetailsModal from '../components/ProductDetailsModal';
-import OrderModal from '../components/OrderModal';
-import CartDrawer from '../components/CartDrawer';
-import WhyChooseUs from '../components/WhyChooseUs';
+import BlogSection from '../components/BlogSection';
 import ContactSection from '../components/ContactSection';
 import Footer from '../components/Footer';
+import OrderModal from '../components/OrderModal';
+import CartDrawer from '../components/CartDrawer';
 import { fetchCategories, fetchProducts } from '../lib/api';
 import { Category, Product, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from '../data/initialProducts';
 import { Search } from 'lucide-react';
@@ -34,9 +34,8 @@ export default function HomePage() {
           fetchProducts(),
         ]);
         if (cats && cats.length > 0) setCategories(cats);
-        // Prioritize our 4 curated healthy salad & meal products
+        // Prioritize our curated healthy meal & salad products
         if (prods && prods.length > 0) {
-          // If DB has custom products, take up to 4 or merge with initial
           setProducts(prods.slice(0, 4));
         } else {
           setProducts(INITIAL_PRODUCTS);
@@ -93,20 +92,20 @@ export default function HomePage() {
       />
 
       <main className="flex-1">
-        {/* Hero Banner */}
+        {/* 1. Hero Banner */}
         <HeroBanner />
 
-        {/* Blog Section */}
-        <BlogSection />
+        {/* 2. কেন জাকজমক সেরা (Why Choose Us) - ব্যানার এর ঠিক নিচে */}
+        <WhyChooseUs />
 
-        {/* Categories Section */}
+        {/* 3. ক্যাটাগরি (Categories Section) */}
         <CategorySection
           categories={categories}
           selectedCategory={selectedCategory}
           onSelectCategory={(slug) => setSelectedCategory(slug)}
         />
 
-        {/* All Products Section - 3 Cards Per Row Grid */}
+        {/* 4. খাদ্য সম্ভার / প্রোডাক্ট (Products Section - 3 Cards Per Row Grid) */}
         <section id="products" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
@@ -161,13 +160,14 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Why Choose Us Section */}
-        <WhyChooseUs />
+        {/* 5. ব্লগ (Blog Section) */}
+        <BlogSection />
 
-        {/* One-Page Direct Contact Section */}
+        {/* 6. যোগাযোগ / কন্টাক্ট আস (Contact Section) */}
         <ContactSection />
       </main>
 
+      {/* 7. ফুটার (Footer) */}
       <Footer />
     </div>
   );
