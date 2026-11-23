@@ -48,24 +48,31 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Desktop Links */}
+          {/* Desktop Links (Accessible from Home, Dashboard, Admin, and any subpage) */}
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-gray-700">
             <Link href="/" className="text-emerald-700 hover:text-emerald-800 transition-colors">
               হোম
             </Link>
-            <a href="#products" className="hover:text-emerald-600 transition-colors">
+            <Link href="/#products" className="hover:text-emerald-600 transition-colors">
               পণ্যসমূহ
-            </a>
-            <a href="#fresh-meals" className="hover:text-emerald-600 transition-colors flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-              সালাদ ও স্যান্ডউইচ
-            </a>
-            <a href="#why-choose-us" className="hover:text-emerald-600 transition-colors">
+            </Link>
+            <Link href="/#why-choose-us" className="hover:text-emerald-600 transition-colors">
               আমাদের বৈশিষ্ট্য
-            </a>
-            <a href="#contact-us" className="hover:text-emerald-600 transition-colors">
+            </Link>
+            <Link href="/#blog" className="hover:text-emerald-600 transition-colors">
+              স্বাস্থ্য টিপস
+            </Link>
+            <Link href="/#contact-us" className="hover:text-emerald-600 transition-colors">
               যোগাযোগ
-            </a>
+            </Link>
+            {isAuthenticated && (
+              <Link
+                href="/dashboard"
+                className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 hover:bg-emerald-100 transition-all"
+              >
+                ড্যাশবোর্ড
+              </Link>
+            )}
           </nav>
 
           {/* Right Action: Cart and user profile */}
@@ -73,7 +80,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="relative flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 font-semibold text-white transition-colors hover:bg-emerald-800"
+              className="relative flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 font-semibold text-white transition-colors hover:bg-emerald-800 active:scale-95 shadow-sm"
               aria-label={`কার্ট খুলুন, ${totalItems}টি পণ্য`}
             >
               <ShoppingBag className="h-4 w-4" />
@@ -87,7 +94,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setAccountModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-100"
+              className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-100 active:scale-95"
               aria-haspopup="dialog"
               aria-label={isAuthenticated ? 'Open account menu' : 'Open login and registration'}
             >
@@ -117,41 +124,50 @@ export default function Header() {
             >
               হোম
             </Link>
-            <a
-              href="#products"
+            <Link
+              href="/#products"
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2 rounded-md hover:bg-emerald-50 hover:text-emerald-700"
             >
               পণ্যসমূহ
-            </a>
-            <a
-              href="#fresh-meals"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-md hover:bg-emerald-50 hover:text-emerald-700"
-            >
-              🥗 সালাদ ও স্যান্ডউইচ
-            </a>
-            <a
-              href="#why-choose-us"
+            </Link>
+            <Link
+              href="/#why-choose-us"
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2 rounded-md hover:bg-emerald-50 hover:text-emerald-700"
             >
               আমাদের বৈশিষ্ট্য
-            </a>
-            <a
-              href="#contact-us"
+            </Link>
+            <Link
+              href="/#blog"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2 rounded-md hover:bg-emerald-50 hover:text-emerald-700"
+            >
+              স্বাস্থ্য টিপস
+            </Link>
+            <Link
+              href="/#contact-us"
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2 rounded-md hover:bg-emerald-50 hover:text-emerald-700"
             >
               যোগাযোগ
-            </a>
+            </Link>
+            {isAuthenticated && (
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-md bg-emerald-50 text-emerald-800 font-bold"
+              >
+                আমার ড্যাশবোর্ড
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
                 setAccountModalOpen(true);
               }}
-              className="px-3 py-2 text-left rounded-md bg-emerald-50 text-emerald-800 font-bold"
+              className="px-3 py-2 text-left rounded-md bg-stone-100 text-stone-800 font-bold"
             >
               {isAuthenticated ? `আমার অ্যাকাউন্ট (${user?.name})` : 'লগইন / রেজিস্টার'}
             </button>

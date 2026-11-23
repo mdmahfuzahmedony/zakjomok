@@ -210,6 +210,12 @@ export default function UserDashboardPage() {
                       >
                         🎟️ সক্রিয় কুপন ও ভাউচার
                       </button>
+                      <Link
+                        href="/#products"
+                        className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black text-xs rounded-xl transition-all shadow-xs inline-flex items-center gap-1.5"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" /> 🛒 খাবার পণ্যসমূহ ও অর্ডার
+                      </Link>
                     </div>
                   </div>
 
@@ -592,14 +598,14 @@ export default function UserDashboardPage() {
 
               {/* Route 5: Shop Link */}
               <Link
-                href="/"
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-bold text-xs text-gray-700 hover:bg-stone-50 transition-all"
+                href="/#products"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-bold text-xs text-stone-800 hover:bg-emerald-50 hover:text-emerald-800 transition-all"
               >
                 <div className="flex items-center gap-2.5">
                   <ShoppingBag className="w-4 h-4 text-emerald-700" />
-                  <span>শপ পেজে যান</span>
+                  <span>খাদ্য পণ্যসমূহ ও মেন্যু দেখুন</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
               </Link>
 
               {/* Route 6: Logout */}
