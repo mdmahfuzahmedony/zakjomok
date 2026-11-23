@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Leaf, Phone, MapPin, Heart } from 'lucide-react';
+import { Phone, MapPin, Heart } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
@@ -15,8 +15,8 @@ export default function Footer() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white">
-                <Leaf className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-[#1e1e24] border border-stone-800 flex items-center justify-center overflow-hidden p-0.5">
+                <img src="/logo.jpg" alt="ZaKJomok Brand Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="text-xl font-black text-white">

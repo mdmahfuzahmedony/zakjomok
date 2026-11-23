@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Leaf,
   PhoneCall,
   Menu,
   X,
@@ -84,8 +83,8 @@ export default function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-              <Leaf className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-2xl bg-[#1e1e24] border border-stone-800 shadow-md shadow-stone-900/10 flex items-center justify-center overflow-hidden p-1 group-hover:scale-105 transition-transform">
+              <img src="/logo.jpg" alt="ZaKJomok Brand Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="text-2xl font-black tracking-tight text-stone-900">
