@@ -89,10 +89,23 @@ interface AdminBlogPost {
   createdAt: string;
 }
 
+interface AdminCustomer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  city?: string | null;
+  address?: string | null;
+  createdAt: string;
+  _count?: {
+    orders: number;
+  };
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { isLoaded, token, user, logout } = useAuth();
-  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
+  const isAdmin = user?.role === 'ADMIN';
 
   // Dashboard sections
   const [activeTab, setActiveTab] = useState<
@@ -139,10 +152,14 @@ export default function AdminDashboardPage() {
   const [isSavingProduct, setIsSavingProduct] = useState(false);
 
   // Edit Product Form State
+  const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editDiscountPrice, setEditDiscountPrice] = useState('');
   const [editStock, setEditStock] = useState('');
   const [editPackSize, setEditPackSize] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [isSavingEditProduct, setIsSavingEditProduct] = useState(false);
 
   // New Category Form State
   const [newCatName, setNewCatName] = useState('');
@@ -163,48 +180,8 @@ export default function AdminDashboardPage() {
   };
 
   // Orders State
-  const [orders, setOrders] = useState<AdminOrder[]>([
-    {
-      id: 'ord-101',
-      orderNumber: 'ZAK-8921',
-      customerName: 'মোঃ তানভীর হাসান',
-      customerPhone: '01712-345678',
-      customerAddress: 'বাড়ি #১২, রোড #৪, ধানমন্ডি, ঢাকা',
-      deliveryCity: 'Dhaka',
-      totalAmount: 430,
-      status: 'PENDING',
-      paymentMethod: 'COD',
-      itemsSummary: '🥗 Healthy Mixed Salad (x1), 🥪 Healthy Sandwich (x2)',
-      createdAt: 'আজ, ১০:১৫ AM',
-    },
-    {
-      id: 'ord-102',
-      orderNumber: 'ZAK-8919',
-      customerName: 'ফারহানা ইসলাম',
-      customerPhone: '01890-123456',
-      customerAddress: 'ফ্ল্যাট ৪বি, উত্তরা সেক্টর ৭, ঢাকা',
-      deliveryCity: 'Dhaka',
-      totalAmount: 650,
-      status: 'CONFIRMED',
-      paymentMethod: 'COD',
-      itemsSummary: 'Premium California Almonds (x1), Organic Chia Seeds (x1)',
-      createdAt: 'আজ, ০৯:৩০ AM',
-    },
-    {
-      id: 'ord-103',
-      orderNumber: 'ZAK-8890',
-      customerName: 'রাশেদ করিম',
-      customerPhone: '01911-987654',
-      customerAddress: 'জিইসি মোড়, চট্টগ্রাম',
-      deliveryCity: 'Outside Dhaka',
-      totalAmount: 480,
-      status: 'SHIPPED',
-      paymentMethod: 'COD',
-      itemsSummary: 'Rolled Oats (x1), Himalayan Pink Salt (x1)',
-      createdAt: 'গতকাল, ০৫:২০ PM',
-    },
-  ]);
-
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [customersList, setCustomersList] = useState<AdminCustomer[]>([]);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
 
   // Load backend real data (Orders, Products, Categories, Messages)
@@ -223,7 +200,7 @@ export default function AdminDashboardPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.success && data.data && data.data.length > 0) {
+          if (data.success && Array.isArray(data.data)) {
             const mapped: AdminOrder[] = data.data.map((o: any) => ({
               id: o.id,
               orderNumber: o.orderNumber,
@@ -244,6 +221,21 @@ export default function AdminDashboardPage() {
         }
       } catch (e) {
         // offline / simulated fallback
+      }
+
+      // 1.5 Customers
+      try {
+        const custRes = await fetch(`${API_BASE}/api/admin/customers`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (custRes.ok) {
+          const custData = await custRes.json();
+          if (custData.success && Array.isArray(custData.data)) {
+            setCustomersList(custData.data);
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching admin customers:', e);
       }
 
       // 2. Categories
@@ -598,10 +590,13 @@ export default function AdminDashboardPage() {
   // 2. OPEN EDIT MODAL
   const openEditModal = (prod: Product) => {
     setSelectedProduct(prod);
+    setEditName(prod.name);
     setEditPrice(prod.price.toString());
     setEditDiscountPrice(prod.discountPrice ? prod.discountPrice.toString() : '');
     setEditStock(prod.stock.toString());
     setEditPackSize(prod.packSize);
+    setEditCategory(prod.categorySlug || '');
+    setEditDescription(prod.description || '');
     setIsEditProductOpen(true);
   };
 
@@ -610,45 +605,77 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     if (!selectedProduct) return;
 
-    const updatedPrice = parseFloat(editPrice) || selectedProduct.price;
-    const updatedDiscount = editDiscountPrice ? parseFloat(editDiscountPrice) : undefined;
-    const updatedStock = parseInt(editStock) || selectedProduct.stock;
-    const updatedPack = editPackSize || selectedProduct.packSize;
+    const parsedPrice = parseFloat(editPrice);
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      showToast('অনুগ্রহ করে সঠিক মূল্য লিখুন', 'error');
+      return;
+    }
 
-    const updated = productsList.map((p) => {
-      if (p.id === selectedProduct.id) {
-        return {
-          ...p,
-          price: updatedPrice,
-          discountPrice: updatedDiscount,
-          stock: updatedStock,
-          packSize: updatedPack,
-        };
-      }
-      return p;
-    });
+    const parsedStock = parseInt(editStock);
+    if (isNaN(parsedStock) || parsedStock < 0) {
+      showToast('অনুগ্রহ করে সঠিক স্টক পরিমাণ লিখুন', 'error');
+      return;
+    }
 
-    setProductsList(updated);
-    setIsEditProductOpen(false);
+    const updatedDiscount = editDiscountPrice.trim() !== '' ? parseFloat(editDiscountPrice) : null;
+    const categoryObj = categoriesList.find((c) => c.slug === editCategory);
 
-    // Sync to backend
+    setIsSavingEditProduct(true);
+
     try {
-      await fetch(`${API_BASE}/api/products/${selectedProduct.id}`, {
+      const res = await fetch(`${API_BASE}/api/products/${selectedProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          price: updatedPrice,
+          name: editName.trim() || selectedProduct.name,
+          price: parsedPrice,
           discountPrice: updatedDiscount,
-          stock: updatedStock,
-          packSize: updatedPack,
+          stock: parsedStock,
+          packSize: editPackSize.trim() || selectedProduct.packSize,
+          description: editDescription.trim(),
+          ...(categoryObj?.id && { categoryId: categoryObj.id }),
         }),
       });
-    } catch (err) {}
 
-    showToast(`"${selectedProduct.name}" এর মূল্য ও স্টক আপডেট করা হয়েছে!`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.message || 'পণ্য আপডেট করতে সমস্যা হয়েছে।', 'error');
+        return;
+      }
+
+      // Update local products list with backend response
+      const serverProduct = data.data;
+      const updated = productsList.map((p) => {
+        if (p.id === selectedProduct.id) {
+          return {
+            ...p,
+            name: serverProduct.name || editName.trim() || p.name,
+            price: Number(serverProduct.price ?? parsedPrice),
+            discountPrice: serverProduct.discountPrice !== null && serverProduct.discountPrice !== undefined
+              ? Number(serverProduct.discountPrice)
+              : undefined,
+            stock: Number(serverProduct.stock ?? parsedStock),
+            packSize: serverProduct.packSize || editPackSize.trim() || p.packSize,
+            description: serverProduct.description !== undefined ? serverProduct.description : editDescription.trim(),
+            categorySlug: categoryObj?.slug || p.categorySlug,
+            categoryName: categoryObj?.name || p.categoryName,
+          };
+        }
+        return p;
+      });
+
+      setProductsList(updated);
+      setIsEditProductOpen(false);
+      showToast(`"${editName.trim() || selectedProduct.name}" সফলভাবে আপডেট করা হয়েছে!`);
+    } catch (err) {
+      console.error('Error updating product:', err);
+      showToast('সার্ভারের সাথে যোগাযোগ করা যায়নি। আবার চেষ্টা করুন।', 'error');
+    } finally {
+      setIsSavingEditProduct(false);
+    }
   };
 
   // 4. DELETE PRODUCT (Synced to Backend)
@@ -739,10 +766,10 @@ export default function AdminDashboardPage() {
 
   // Sales Report & Health Analytics Data
   const periodStats = {
-    today: { sales: '৳৪,৩৫০', orders: '৮ টি', growth: '+১২.৪%', subtitle: 'আজকের মোট অর্ডার' },
-    '7days': { sales: '৳৪৪,৮০০', orders: '৯২ টি', growth: '+১৮.৫%', subtitle: 'গত ৭ দিনের সার্বিক অগ্রগতি' },
-    month: { sales: '৳১,৮৬,৪০০', orders: '৩৮৫ টি', growth: '+২৪.১%', subtitle: 'চলতি মাসের মোট সেলস' },
-    year: { sales: '৳১৪,২৫,০০০', orders: '২,৯৫০ টি', growth: '+৩৫.৮%', subtitle: 'বাৎসরিক গ্রোথ রেকার্ড' },
+    today: { sales: `৳${totalSales}`, orders: `${totalOrdersCount} টি`, growth: totalOrdersCount > 0 ? 'লাইভ' : '০%', subtitle: 'ডাটাবেজ মোট অর্ডার' },
+    '7days': { sales: `৳${totalSales}`, orders: `${totalOrdersCount} টি`, growth: totalOrdersCount > 0 ? 'লাইভ' : '০%', subtitle: 'ডাটাবেজ মোট সেলস' },
+    month: { sales: `৳${totalSales}`, orders: `${totalOrdersCount} টি`, growth: totalOrdersCount > 0 ? 'লাইভ' : '০%', subtitle: 'চলতি মাসের মোট সেলস' },
+    year: { sales: `৳${totalSales}`, orders: `${totalOrdersCount} টি`, growth: totalOrdersCount > 0 ? 'লাইভ' : '০%', subtitle: 'বাৎসরিক মোট হিসাব' },
   };
 
   const weeklySalesData = [
@@ -2597,23 +2624,45 @@ export default function AdminDashboardPage() {
           {/* TAB 5: CUSTOMERS */}
           {activeTab === 'customers' && (
             <div className="bg-white rounded-3xl border border-stone-200 p-6 space-y-6 w-full">
-              <h3 className="text-lg font-bold text-gray-900">কাস্টমার তালিকা ও ফোন নম্বর</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">নিবন্ধিত কাস্টমার তালিকা ({customersList.length})</h3>
+                  <p className="text-xs text-gray-500">ডাটাবেজে নিবন্ধিত সকল কাস্টমারদের তথ্য ও যোগাযোগ নম্বর</p>
+                </div>
+              </div>
               <div className="divide-y divide-gray-100">
-                {orders.map((ord) => (
-                  <div key={ord.id} className="py-3.5 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">{ord.customerName}</p>
-                      <p className="text-gray-500">{ord.customerAddress}</p>
+                {customersList.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-500">কোনো কাস্টমার পাওয়া যায়নি।</p>
+                ) : (
+                  customersList.map((cust) => (
+                    <div key={cust.id} className="py-3.5 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-gray-900 text-sm">{cust.name}</p>
+                          {cust.city && (
+                            <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full text-[10px]">
+                              {cust.city}
+                            </span>
+                          )}
+                          {cust._count?.orders !== undefined && (
+                            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              {cust._count.orders} টি অর্ডার
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-500">{cust.address || 'ঠিকানা দেওয়া হয়নি'}</p>
+                        <p className="text-[10px] text-gray-400">নিবন্ধিত: {new Date(cust.createdAt).toLocaleDateString('bn-BD')}</p>
+                      </div>
+                      <a
+                        href={`tel:${cust.phone}`}
+                        className="px-4 py-2 bg-emerald-50 text-emerald-800 font-bold rounded-xl flex items-center gap-1.5 hover:bg-emerald-100 transition-colors"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" />
+                        {cust.phone}
+                      </a>
                     </div>
-                    <a
-                      href={`tel:${ord.customerPhone}`}
-                      className="px-4 py-2 bg-emerald-50 text-emerald-800 font-bold rounded-xl flex items-center gap-1.5"
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" />
-                      {ord.customerPhone}
-                    </a>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -2824,14 +2873,14 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ========================================================
-          EDIT PRICE & STOCK MODAL
+          EDIT PRODUCT MODAL
       ======================================================== */}
       {isEditProductOpen && selectedProduct && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-stone-200 animate-scale-up">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 animate-scale-up max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div>
-                <h3 className="text-base font-black text-gray-900">মূল্য ও স্টক সেটআপ</h3>
+                <h3 className="text-base font-black text-gray-900">পণ্য তথ্য ও স্টক এডিট</h3>
                 <p className="text-xs text-emerald-800 font-bold truncate mt-0.5">{selectedProduct.name}</p>
               </div>
               <button
@@ -2844,64 +2893,111 @@ export default function AdminDashboardPage() {
 
             <form onSubmit={handleSaveEditProduct} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">মূল্য (টাকায়)</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">পণ্যের নাম</label>
                 <input
-                  type="number"
+                  type="text"
                   required
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(e.target.value)}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold text-gray-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  ডিসকাউন্ট মূল্য (ছাড়ের পর দাম)
-                </label>
-                <input
-                  type="number"
-                  placeholder="না থাকলে ফাঁকা রাখুন"
-                  value={editDiscountPrice}
-                  onChange={(e) => setEditDiscountPrice(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold text-emerald-700"
-                />
+                <label className="block text-xs font-bold text-gray-700 mb-1">ক্যাটাগরি</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-medium text-gray-800"
+                >
+                  {categoriesList.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">মূল্য (টাকায়)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="any"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    ডিসকাউন্ট মূল্য (ছাড়ের পর দাম)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="না থাকলে ফাঁকা রাখুন"
+                    value={editDiscountPrice}
+                    onChange={(e) => setEditDiscountPrice(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold text-emerald-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">প্যাক সাইজ</label>
+                  <input
+                    type="text"
+                    required
+                    value={editPackSize}
+                    onChange={(e) => setEditPackSize(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">স্টক পরিমাণ (পিস)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editStock}
+                    onChange={(e) => setEditStock(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">প্যাক সাইজ</label>
-                <input
-                  type="text"
-                  required
-                  value={editPackSize}
-                  onChange={(e) => setEditPackSize(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">স্টক পরিমাণ (পিস)</label>
-                <input
-                  type="number"
-                  required
-                  value={editStock}
-                  onChange={(e) => setEditStock(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden font-bold"
+                <label className="block text-xs font-bold text-gray-700 mb-1">বিবরণ (Description)</label>
+                <textarea
+                  rows={2}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:border-emerald-600 focus:outline-hidden resize-none"
                 />
               </div>
 
               <div className="pt-3 border-t border-gray-100 flex justify-end gap-3">
                 <button
                   type="button"
+                  disabled={isSavingEditProduct}
                   onClick={() => setIsEditProductOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700"
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs"
+                  disabled={isSavingEditProduct}
+                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
                 >
-                  আপডেট সেভ করুন
+                  {isSavingEditProduct ? 'সেভ হচ্ছে...' : 'আপডেট সেভ করুন'}
                 </button>
               </div>
             </form>

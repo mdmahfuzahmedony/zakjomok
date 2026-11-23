@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     if (
       isLoaded &&
-      (user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER')
+      user?.role === 'ADMIN'
     ) {
       router.replace('/admin/dashboard');
     }
@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
     setErrorMessage(result.message);
   };
 
-  if (!isLoaded || user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER') {
+  if (!isLoaded || user?.role === 'ADMIN') {
     return (
       <main className="min-h-screen flex items-center justify-center bg-stone-100">
         <p className="text-sm font-semibold text-emerald-800">লোড হচ্ছে...</p>

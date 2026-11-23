@@ -31,6 +31,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
+
 interface UserOrder {
   id: string;
   orderNumber: string;
@@ -62,35 +64,12 @@ export default function UserDashboardPage() {
 
   // Profile Form States
   const [name, setName] = useState(user?.name || 'প্রিয় গ্রাহক');
-  const [phone, setPhone] = useState(user?.phone || '01712-345678');
-  const [address, setAddress] = useState(user?.address || 'বাড়ি #১২, ধানমন্ডি, ঢাকা');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [address, setAddress] = useState(user?.address || '');
   const [profileSuccess, setProfileSuccess] = useState(false);
 
   // Orders State
-  const [orders, setOrders] = useState<UserOrder[]>([
-    {
-      id: 'ord-user-1',
-      orderNumber: 'ZAK-8921',
-      customerName: user?.name || 'গ্রাহক',
-      customerPhone: user?.phone || '01712-345678',
-      customerAddress: user?.address || 'বাড়ি #১২, ধানমন্ডি, ঢাকা',
-      totalAmount: 430,
-      status: 'PENDING',
-      itemsSummary: '🥗 Healthy Mixed Salad (x1), 🥪 Healthy Sandwich (x2)',
-      createdAt: 'আজ, ১০:১৫ AM',
-    },
-    {
-      id: 'ord-user-2',
-      orderNumber: 'ZAK-8874',
-      customerName: user?.name || 'গ্রাহক',
-      customerPhone: user?.phone || '01712-345678',
-      customerAddress: user?.address || 'বাড়ি #১২, ধানমন্ডি, ঢাকা',
-      totalAmount: 670,
-      status: 'DELIVERED',
-      itemsSummary: 'Premium California Almonds (x1), Whole Grain Rolled Oats (x1)',
-      createdAt: '২৫ অক্টোবর, ০৪:৩০ PM',
-    },
-  ]);
+  const [orders, setOrders] = useState<UserOrder[]>([]);
 
   // Available Discounts & Coupons
   const [coupons, setCoupons] = useState<UserCoupon[]>([]);
@@ -122,31 +101,29 @@ export default function UserDashboardPage() {
     async function loadUserData() {
       if (token) {
         try {
-          const res = await fetch('http://localhost:5000/api/auth/me', {
+          const res = await fetch(`${API_BASE}/api/orders/my-orders`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
             const data = await res.json();
-            if (data.success && data.data) {
-              if (data.data.orders && data.data.orders.length > 0) {
-                setOrders(
-                  data.data.orders.map((o: any) => ({
-                    id: o.id,
-                    orderNumber: o.orderNumber,
-                    customerName: o.customerName,
-                    customerPhone: o.customerPhone,
-                    customerAddress: o.customerAddress,
-                    totalAmount: o.totalAmount,
-                    status: o.status,
-                    itemsSummary: (o.items || []).map((i: any) => `${i.productName} (x${i.quantity})`).join(', '),
-                    createdAt: new Date(o.createdAt).toLocaleDateString('bn-BD'),
-                  }))
-                );
-              }
+            if (data.success && Array.isArray(data.data)) {
+              setOrders(
+                data.data.map((o: any) => ({
+                  id: o.id,
+                  orderNumber: o.orderNumber,
+                  customerName: o.customerName,
+                  customerPhone: o.customerPhone,
+                  customerAddress: o.customerAddress,
+                  totalAmount: o.totalAmount,
+                  status: o.status,
+                  itemsSummary: (o.items || []).map((i: any) => `${i.productName} (x${i.quantity})`).join(', '),
+                  createdAt: new Date(o.createdAt).toLocaleDateString('bn-BD'),
+                }))
+              );
             }
           }
         } catch (e) {
-          // offline support
+          console.error('Error fetching user orders:', e);
         }
       }
     }
@@ -322,7 +299,19 @@ export default function UserDashboardPage() {
                 </div>
 
                 <div className="divide-y divide-gray-100 space-y-4">
-                  {orders.map((ord) => (
+                  {orders.length === 0 ? (
+                    <div className="py-12 text-center text-gray-500 space-y-3">
+                      <Package className="w-10 h-10 mx-auto text-stone-300" />
+                      <p className="font-semibold text-gray-700 text-sm">আপনার কোনো অর্ডার পাওয়া যায়নি।</p>
+                      <Link
+                        href="/#products"
+                        className="inline-block px-4 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-all shadow-xs"
+                      >
+                        শপ থেকে পণ্য দেখুন
+                      </Link>
+                    </div>
+                  ) : (
+                    orders.map((ord) => (
                     <div key={ord.id} className="pt-4 first:pt-0 space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
@@ -366,7 +355,7 @@ export default function UserDashboardPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )))}
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, Product, Category } from '../data/initialProducts';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
 
 export interface BlogPostSummary {
   id: string;
@@ -23,7 +23,7 @@ export async function fetchBlogs(): Promise<BlogPostSummary[]> {
 
 export async function fetchCategories(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/categories`, { next: { revalidate: 60 } });
+    const res = await fetch(`${API_BASE}/api/categories`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.data && data.data.length > 0) {
@@ -42,7 +42,7 @@ export async function fetchProducts(categorySlug?: string, featuredOnly?: boolea
     if (categorySlug) url += `category=${categorySlug}&`;
     if (featuredOnly) url += `featured=true&`;
 
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.data && data.data.length > 0) {

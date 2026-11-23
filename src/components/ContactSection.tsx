@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 
 export default function ContactSection() {
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
   const [name, setName] = useState('');
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [message, setMessage] = useState('');

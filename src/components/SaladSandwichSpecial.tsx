@@ -82,8 +82,12 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
 
             <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between">
               <div>
-                <span className="text-2xl font-black text-emerald-300">৳১৫০</span>
-                <span className="text-sm text-gray-400 line-through ml-2">৳১৮০</span>
+                <span className="text-2xl font-black text-emerald-300">
+                  ৳{salad ? (salad.discountPrice || salad.price) : 150}
+                </span>
+                {salad && salad.discountPrice && salad.discountPrice < salad.price && (
+                  <span className="text-sm text-gray-400 line-through ml-2">৳{salad.price}</span>
+                )}
               </div>
               {salad && (
                 <button
@@ -143,8 +147,12 @@ export default function SaladSandwichSpecial({ products }: SaladSandwichProps) {
 
             <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between">
               <div>
-                <span className="text-2xl font-black text-emerald-300">৳১২০</span>
-                <span className="text-sm text-gray-400 line-through ml-2">৳১৪০</span>
+                <span className="text-2xl font-black text-emerald-300">
+                  ৳{sandwich ? (sandwich.discountPrice || sandwich.price) : 120}
+                </span>
+                {sandwich && sandwich.discountPrice && sandwich.discountPrice < sandwich.price && (
+                  <span className="text-sm text-gray-400 line-through ml-2">৳{sandwich.price}</span>
+                )}
               </div>
               {sandwich && (
                 <button

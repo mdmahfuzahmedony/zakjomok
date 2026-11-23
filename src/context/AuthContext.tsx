@@ -9,7 +9,7 @@ export interface UserProfile {
   phone: string;
   address?: string | null;
   city?: string | null;
-  role: 'CUSTOMER' | 'SUPER_ADMIN' | 'MANAGER' | 'VENDOR';
+  role: 'CUSTOMER' | 'ADMIN';
 }
 
 interface AuthContextType {
@@ -34,7 +34,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
 
 interface AuthResponse {
   success: boolean;
@@ -84,8 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.ok && data.success && data.user && data.token) {
         if (
           requiredRole === 'ADMIN' &&
-          data.user.role !== 'SUPER_ADMIN' &&
-          data.user.role !== 'MANAGER'
+          data.user.role !== 'ADMIN'
         ) {
           return {
             success: false,

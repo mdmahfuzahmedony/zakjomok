@@ -4,7 +4,7 @@ import { ChangeEvent, useId, useState } from 'react';
 import Image from 'next/image';
 import { ImagePlus, LoaderCircle, Upload } from 'lucide-react';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002').replace(/\/$/, '');
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 interface AdminImageUploadProps {
