@@ -830,12 +830,14 @@ export default function AdminDashboardPage() {
         <div>
           {/* Sidebar Brand Header */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-emerald-900/80 bg-emerald-950">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <img
-                src="/logo.png"
-                alt="ZaKJomok Brand Logo"
-                className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
-              />
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="h-11 w-11 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
+                <img
+                  src="/logo.png"
+                  alt="ZaKJomok Brand Logo"
+                  className="h-full w-full object-contain"
+                />
+              </div>
               <div>
                 <span className="text-xl font-black tracking-tight text-white">
                   ZaK<span className="text-emerald-400">Jomok</span>
@@ -1073,17 +1075,35 @@ export default function AdminDashboardPage() {
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64 lg:pl-72 w-full">
         
         {/* Top Header Bar */}
-        <header className="h-20 bg-white border-b border-stone-200 px-6 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
-          <div className="flex items-center gap-4">
+        <header className="h-20 bg-white border-b border-stone-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-stone-50"
+              className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-stone-50 shrink-0"
+              aria-label="Open sidebar menu"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+            {/* Brand Logo in Top Bar */}
+            <Link href="/" target="_blank" className="flex items-center gap-2.5 shrink-0 group">
+              <img
+                src="/logo.png"
+                alt="ZaKJomok Brand Logo"
+                className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
+              />
+              <div className="hidden sm:block">
+                <span className="text-lg font-black tracking-tight text-stone-900 leading-none">
+                  ZaK<span className="text-emerald-600">Jomok</span>
+                </span>
+                <p className="text-[9px] font-bold text-emerald-700 tracking-wider uppercase mt-0.5">
+                  Admin Panel
+                </p>
+              </div>
+            </Link>
+
+            <div className="border-l border-stone-200 pl-3 sm:pl-4 min-w-0">
+              <h1 className="text-sm sm:text-lg lg:text-xl font-black text-gray-900 truncate">
                 {activeTab === 'overview' && '📊 ড্যাশবোর্ড ওভারভিউ (সবকিছু একনজরে)'}
                 {activeTab === 'products' && '🥗 পণ্য ব্যবস্থাপনা ও মূল্য সেটআপ'}
                 {activeTab === 'categories' && '📂 ক্যাটাগরি তৈরি ও পরিচালনা'}
@@ -1093,17 +1113,17 @@ export default function AdminDashboardPage() {
                 {activeTab === 'messages' && '✉️ কাস্টমার ইনকোয়ারি বার্তা'}
                 {activeTab === 'blogs' && '📝 ব্লগ লেখা ও প্রকাশ'}
               </h1>
-              <p className="text-xs text-gray-500 hidden sm:block">
+              <p className="text-[11px] text-gray-500 hidden md:block truncate">
                 ZakJomok Healthy Food • ফুল উইডথ বিজনেস কন্ট্রোল প্যানেল
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               href="/"
               target="_blank"
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
             >
               <span>লাইভ শপ</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -1425,17 +1445,22 @@ export default function AdminDashboardPage() {
               <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-emerald-950/20 relative overflow-hidden">
                 <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-emerald-500/10 to-transparent pointer-events-none" />
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-                  <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 bg-emerald-700/80 text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider text-emerald-200">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                      ZaKJomok মাস্টার কন্ট্রোল প্যানেল
+                  <div className="flex items-start gap-4">
+                    <div className="hidden sm:flex h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-md p-2.5 items-center justify-center shrink-0 border border-white/20 shadow-md">
+                      <img src="/logo.png" alt="ZaKJomok Brand Logo" className="h-full w-auto object-contain" />
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-                      ড্যাশবোর্ড ওভারভিউ — সবকিছু একনজরে
-                    </h2>
-                    <p className="text-xs sm:text-sm text-emerald-100/90 max-w-2xl leading-relaxed">
-                      আজকের মোট সেলস, পেন্ডিং ফোন কল কনফার্মেশন, পণ্যের ইনভেন্টরি স্টক ও কাস্টমার ইনকোয়ারি এখানে একনজরে পর্যবেক্ষণ ও নিয়ন্ত্রণ করুন।
-                    </p>
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center gap-2 bg-emerald-700/80 text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider text-emerald-200">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+                        ZaKJomok মাস্টার কন্ট্রোল প্যানেল
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                        ড্যাশবোর্ড ওভারভিউ — সবকিছু একনজরে
+                      </h2>
+                      <p className="text-xs sm:text-sm text-emerald-100/90 max-w-2xl leading-relaxed">
+                        আজকের মোট সেলস, পেন্ডিং ফোন কল কনফার্মেশন, পণ্যের ইনভেন্টরি স্টক ও কাস্টমার ইনকোয়ারি এখানে একনজরে পর্যবেক্ষণ ও নিয়ন্ত্রণ করুন।
+                      </p>
+                    </div>
                   </div>
 
                   {/* Quick Action Shortcuts */}
