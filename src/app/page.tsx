@@ -114,7 +114,7 @@ export default function HomePage() {
                 <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
                   {t('আমাদের ফ্রেশ খাদ্য সম্ভার', 'Our Fresh Food Menu')}
                 </span>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 mt-1">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900 mt-1">
                   {selectedCategory
                     ? `${categories.find((c) => c.slug === selectedCategory)?.name || t('ক্যাটাগরি', 'Category')} ${t('পণ্যসমূহ', 'Items')}`
                     : t('প্রাকৃতিক ও স্বাস্থ্যকর সালাদ ও মিলস', 'Natural & Healthy Salads & Meals')}

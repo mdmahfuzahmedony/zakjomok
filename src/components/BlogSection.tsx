@@ -77,7 +77,7 @@ export default function BlogSection() {
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
               <span>{t('স্বাস্থ্য টিপস ও গাইড', 'Health Tips & Guides')}</span>
             </div>
-            <h2 className="text-2xl font-extrabold text-stone-900 sm:text-3xl lg:text-4xl">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900">
               {t('স্বাস্থ্যকর জীবন নিয়ে পড়ুন', 'Read About Healthy Living')}
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-stone-600">

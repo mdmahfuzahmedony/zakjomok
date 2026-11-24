@@ -33,7 +33,7 @@ export default function SaladSandwichSpecial({
             <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
             <span>দৈনিক ফ্রেশ খাবার সম্ভার</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900 tracking-tight">
             স্বাদ ও সুস্বাস্থ্যের অনন্য মেলবন্ধন
           </h2>
           <p className="text-emerald-200/80 text-base mt-2">

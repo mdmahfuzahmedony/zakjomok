@@ -50,7 +50,7 @@ export default function ContactSection() {
           <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">
             {t('সরাসরি যোগাযোগ', 'Direct Contact')}
           </span>
-          <h2 className="text-3xl font-extrabold text-stone-900 mt-1">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900 mt-1">
             {t('যেকোনো প্রশ্ন বা স্পেশাল অর্ডারে আমরা আছি পাশে', 'We Are Here for Questions & Custom Orders')}
           </h2>
           <p className="text-stone-500 text-xs sm:text-sm mt-2">

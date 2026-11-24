@@ -54,7 +54,7 @@ export default function WhyChooseUs() {
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>{t('কেন ZaKJomok সেরা?', 'Why Choose ZaKJomok?')}</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-stone-900 tracking-tight">
             {t('আপনার সুস্থ জীবনের বিশ্বস্ত সাথী', 'Your Trusted Partner for Healthy Living')}
           </h2>
           <p className="text-stone-600 text-xs sm:text-sm mt-3 leading-relaxed">
