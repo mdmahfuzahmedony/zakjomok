@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -39,6 +39,10 @@ import {
   Calendar,
   Percent,
   BookOpen,
+  MessageSquare,
+  Send,
+  CheckCheck,
+  User as UserIcon,
 } from 'lucide-react';
 import { Product, Category } from '../../../data/initialProducts';
 import { useAuth } from '../../../context/AuthContext';
@@ -76,6 +80,27 @@ interface AdminMessage {
   emailOrPhone: string;
   subject: string | null;
   message: string;
+  createdAt: string;
+}
+
+interface AdminChatConversation {
+  sessionId: string;
+  customerName: string;
+  customerPhone: string | null;
+  lastMessage: string;
+  lastMessageAt: string;
+  lastSenderRole: 'CUSTOMER' | 'ADMIN';
+  unreadCount: number;
+  totalMessages: number;
+}
+
+interface AdminChatMessage {
+  id: string;
+  sessionId: string;
+  senderRole: 'CUSTOMER' | 'ADMIN';
+  senderName: string;
+  senderPhone?: string | null;
+  text: string;
   createdAt: string;
 }
 
@@ -183,6 +208,15 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [customersList, setCustomersList] = useState<AdminCustomer[]>([]);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
+
+  // Live Chat Messenger states
+  const [conversations, setConversations] = useState<AdminChatConversation[]>([]);
+  const [selectedChatSession, setSelectedChatSession] = useState<string | null>(null);
+  const [currentChatMessages, setCurrentChatMessages] = useState<AdminChatMessage[]>([]);
+  const [adminReplyText, setAdminReplyText] = useState('');
+  const [isSendingAdminReply, setIsSendingAdminReply] = useState(false);
+  const [messagesSubTab, setMessagesSubTab] = useState<'chat' | 'inquiries'>('chat');
+  const adminChatEndRef = useRef<HTMLDivElement>(null);
 
   // Load backend real data (Orders, Products, Categories, Messages)
   useEffect(() => {
@@ -349,9 +383,125 @@ export default function AdminDashboardPage() {
       } catch (error) {
         console.error('Error fetching admin blog posts:', error);
       }
+
+      // Fetch Live Chat conversations
+      try {
+        const chatRes = await fetch(`${API_BASE}/api/chat/admin/conversations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (chatRes.ok) {
+          const chatData = await chatRes.json();
+          if (chatData.success && Array.isArray(chatData.data)) {
+            setConversations(chatData.data);
+            if (chatData.data.length > 0) {
+              setSelectedChatSession((current) => current || chatData.data[0].sessionId);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching chat conversations:', err);
+      }
     }
     fetchBackendData();
   }, [isAdmin, isLoaded, router, token]);
+
+  // Polling for live chat messages and conversations
+  useEffect(() => {
+    if (!isAdmin || !token || activeTab !== 'messages') return;
+
+    const pollLiveChat = async () => {
+      try {
+        const convRes = await fetch(`${API_BASE}/api/chat/admin/conversations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (convRes.ok) {
+          const convData = await convRes.json();
+          if (convData.success && Array.isArray(convData.data)) {
+            setConversations(convData.data);
+            if (!selectedChatSession && convData.data.length > 0) {
+              setSelectedChatSession(convData.data[0].sessionId);
+            }
+          }
+        }
+
+        if (selectedChatSession) {
+          const msgRes = await fetch(`${API_BASE}/api/chat/${selectedChatSession}`);
+          if (msgRes.ok) {
+            const msgData = await msgRes.json();
+            if (msgData.success && Array.isArray(msgData.data)) {
+              setCurrentChatMessages(msgData.data);
+            }
+          }
+        }
+      } catch {
+        // silent polling
+      }
+    };
+
+    pollLiveChat();
+    const interval = setInterval(pollLiveChat, 3000);
+    return () => clearInterval(interval);
+  }, [activeTab, isAdmin, token, selectedChatSession]);
+
+  // Fetch messages when a specific chat session is selected
+  useEffect(() => {
+    if (!selectedChatSession) return;
+    const fetchSessionMsgs = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/chat/${selectedChatSession}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            setCurrentChatMessages(data.data);
+          }
+        }
+      } catch {}
+    };
+    fetchSessionMsgs();
+  }, [selectedChatSession]);
+
+  // Auto-scroll admin chat to bottom
+  useEffect(() => {
+    adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentChatMessages]);
+
+  // Handle Admin sending reply to customer
+  const handleSendAdminReply = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedChatSession || !adminReplyText.trim() || isSendingAdminReply) return;
+
+    const text = adminReplyText.trim();
+    setIsSendingAdminReply(true);
+    setAdminReplyText('');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/admin/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sessionId: selectedChatSession,
+          text,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setCurrentChatMessages((prev) => [...prev, data.data]);
+        }
+      } else {
+        showToast('রিপ্লাই পাঠানো যায়নি। আবার চেষ্টা করুন।', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to send admin reply:', err);
+      showToast('রিপ্লাই পাঠানো যায়নি। আবার চেষ্টা করুন।', 'error');
+    } finally {
+      setIsSendingAdminReply(false);
+    }
+  };
 
   if (!isLoaded || !isAdmin || !token) {
     return (
@@ -1000,11 +1150,13 @@ export default function AdminDashboardPage() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4" />
-                <span>✉️ ইনকোয়ারি বার্তা</span>
+                <MessageSquare className="w-4 h-4" />
+                <span>💬 লাইভ চ্যাট ও বার্তা</span>
               </div>
               <span className="text-[10px] bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded-full font-bold">
-                {messages.length}
+                {conversations.reduce((s, c) => s + (c.unreadCount || 0), 0) > 0
+                  ? conversations.reduce((s, c) => s + (c.unreadCount || 0), 0)
+                  : messages.length}
               </span>
             </button>
 
@@ -1113,7 +1265,7 @@ export default function AdminDashboardPage() {
                 {activeTab === 'orders' && '📦 অর্ডার ম্যানেজমেন্ট ও ফোন কল কনফার্মেশন'}
                 {activeTab === 'customers' && '👥 কাস্টমার ডাটাবেজ'}
                 {activeTab === 'coupons' && '🏷️ ডিসকাউন্ট ও কুপন কোড'}
-                {activeTab === 'messages' && '✉️ কাস্টমার ইনকোয়ারি বার্তা'}
+                {activeTab === 'messages' && '💬 লাইভ মেসেঞ্জার চ্যাট ও কাস্টমার বার্তা'}
                 {activeTab === 'blogs' && '📝 ব্লগ লেখা ও প্রকাশ'}
               </h1>
               <p className="text-[11px] text-gray-500 hidden md:block truncate">
@@ -2776,33 +2928,267 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* TAB 7: MESSAGES */}
+          {/* TAB 7: MESSAGES & LIVE CHAT (MESSENGER INTERFACE) */}
           {activeTab === 'messages' && (
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 space-y-6 w-full">
-              <h3 className="text-lg font-bold text-gray-900">ইনকোয়ারি ও কাস্টমার বার্তা</h3>
-              <div className="space-y-3">
-                {messages.length === 0 && (
-                  <p className="rounded-xl bg-stone-50 p-5 text-center text-sm text-gray-500">
-                    এখনো কোনো বার্তা আসেনি।
-                  </p>
-                )}
-                {messages.map((m) => (
-                  <div key={m.id} className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-1.5">
-                    <div className="flex justify-between items-center font-bold text-gray-900">
-                      <span>{m.name}</span>
-                      <span className="text-[10px] text-gray-400 font-normal">{new Date(m.createdAt).toLocaleString('bn-BD')}</span>
+            <div className="space-y-4 w-full">
+              {/* Sub-tab Navigation */}
+              <div className="flex items-center gap-2 bg-stone-100 p-1.5 rounded-2xl w-fit">
+                <button
+                  type="button"
+                  onClick={() => setMessagesSubTab('chat')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    messagesSubTab === 'chat'
+                      ? 'bg-white text-emerald-900 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4 text-emerald-700" />
+                  <span>💬 লাইভ চ্যাট মেসেঞ্জার</span>
+                  {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0) > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                      {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMessagesSubTab('inquiries')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    messagesSubTab === 'inquiries'
+                      ? 'bg-white text-emerald-900 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <Mail className="w-4 h-4 text-emerald-700" />
+                  <span>✉️ ইনকোয়ারি ফর্ম বার্তা ({messages.length})</span>
+                </button>
+              </div>
+
+              {/* VIEW 1: LIVE CHAT MESSENGER */}
+              {messagesSubTab === 'chat' && (
+                <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden flex flex-col md:flex-row h-[620px] max-h-[82vh]">
+                  {/* Left Column: Conversations List */}
+                  <div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-stone-200 flex flex-col bg-stone-50/50">
+                    <div className="p-3.5 border-b border-stone-200 flex items-center justify-between bg-white shrink-0">
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900">কাস্টমার চ্যাট তালিকা</h4>
+                        <p className="text-[10px] text-gray-500">অনলাইনে কাস্টমার যা পাঠাচ্ছেন</p>
+                      </div>
+                      <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        {conversations.length} টি সেশন
+                      </span>
                     </div>
-                    <p className="font-semibold text-gray-700">{m.emailOrPhone}</p>
-                    {m.subject && <p className="text-gray-500">{m.subject}</p>}
-                    <p className="text-gray-700">{m.message}</p>
-                    {!m.emailOrPhone.includes('@') && (
-                      <a href={`tel:${m.emailOrPhone}`} className="inline-flex items-center gap-1 pt-1 font-bold text-emerald-700">
-                        <PhoneCall className="h-3 w-3" /> কল করুন
-                      </a>
+
+                    <div className="flex-1 overflow-y-auto divide-y divide-stone-100">
+                      {conversations.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-gray-400 space-y-1">
+                          <MessageSquare className="w-8 h-8 text-stone-300 mx-auto mb-2" />
+                          <p className="font-semibold text-gray-600">কোনো চ্যাট সেশন নেই</p>
+                          <p className="text-[11px]">কাস্টমার ওয়েবসাইটে চ্যাট শুরু করলেই এখানে দেখা যাবে</p>
+                        </div>
+                      ) : (
+                        conversations.map((conv) => {
+                          const isSelected = selectedChatSession === conv.sessionId;
+                          return (
+                            <button
+                              key={conv.sessionId}
+                              type="button"
+                              onClick={() => setSelectedChatSession(conv.sessionId)}
+                              className={`w-full text-left p-3.5 flex items-start gap-3 transition-colors ${
+                                isSelected
+                                  ? 'bg-emerald-50/80 border-l-4 border-emerald-700'
+                                  : 'hover:bg-stone-100/80 bg-white'
+                              }`}
+                            >
+                              <div className="relative shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">
+                                  {conv.customerName ? conv.customerName[0] : 'ক'}
+                                </div>
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1 mb-0.5">
+                                  <span className="text-xs font-bold text-gray-900 truncate">
+                                    {conv.customerName || 'বেনামী কাস্টমার'}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 shrink-0">
+                                    {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+
+                                {conv.customerPhone && (
+                                  <span className="block text-[10px] text-emerald-700 font-semibold truncate mb-0.5">
+                                    📞 {conv.customerPhone}
+                                  </span>
+                                )}
+
+                                <p className="text-[11px] text-gray-500 truncate">
+                                  {conv.lastSenderRole === 'ADMIN' ? 'আপনি: ' : ''}
+                                  {conv.lastMessage}
+                                </p>
+                              </div>
+
+                              {conv.unreadCount > 0 && (
+                                <span className="shrink-0 bg-rose-500 text-white text-[10px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                                  {conv.unreadCount}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Chat Window */}
+                  <div className="flex-1 flex flex-col bg-white">
+                    {selectedChatSession ? (
+                      <>
+                        {/* Chat Header */}
+                        {(() => {
+                          const activeConv = conversations.find((c) => c.sessionId === selectedChatSession);
+                          return (
+                            <div className="p-3.5 border-b border-stone-200 bg-stone-50/80 flex items-center justify-between shrink-0">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-emerald-700 text-white font-black flex items-center justify-center text-sm shadow-xs">
+                                  {activeConv?.customerName ? activeConv.customerName[0] : 'ক'}
+                                </div>
+                                <div>
+                                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-2">
+                                    {activeConv?.customerName || 'কাস্টমার'}
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-semibold bg-emerald-100/70 px-2 py-0.2 rounded-full">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                      লাইভ যুক্ত
+                                    </span>
+                                  </h4>
+                                  <p className="text-[10px] text-gray-500">
+                                    সেশন আইডি: {selectedChatSession.slice(0, 16)}...
+                                  </p>
+                                </div>
+                              </div>
+
+                              {activeConv?.customerPhone && (
+                                <a
+                                  href={`tel:${activeConv.customerPhone}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
+                                >
+                                  <PhoneCall className="w-3.5 h-3.5" />
+                                  <span>{activeConv.customerPhone}</span>
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Messages Thread */}
+                        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#fcfdfc]">
+                          {currentChatMessages.length === 0 ? (
+                            <div className="py-12 text-center text-xs text-gray-400">
+                              বার্তা লোড হচ্ছে...
+                            </div>
+                          ) : (
+                            currentChatMessages.map((msg) => {
+                              const isAdminSender = msg.senderRole === 'ADMIN';
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className={`flex ${isAdminSender ? 'justify-end' : 'justify-start gap-2'} animate-in fade-in duration-100`}
+                                >
+                                  {!isAdminSender && (
+                                    <div className="w-7 h-7 rounded-full bg-stone-200 text-stone-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                                      {msg.senderName ? msg.senderName[0] : 'ক'}
+                                    </div>
+                                  )}
+
+                                  <div
+                                    className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-xs leading-relaxed shadow-2xs ${
+                                      isAdminSender
+                                        ? 'bg-emerald-700 text-white rounded-tr-xs'
+                                        : 'bg-white text-stone-900 border border-stone-200 rounded-tl-xs'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-3 mb-1 text-[10px]">
+                                      <span className={`font-bold ${isAdminSender ? 'text-emerald-200' : 'text-emerald-800'}`}>
+                                        {isAdminSender ? 'আপনি (ZaKJomok)' : msg.senderName || 'কাস্টমার'}
+                                      </span>
+                                      <span className={isAdminSender ? 'text-emerald-200' : 'text-gray-400'}>
+                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+
+                                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                          <div ref={adminChatEndRef} />
+                        </div>
+
+                        {/* Admin Reply Bar */}
+                        <form
+                          onSubmit={handleSendAdminReply}
+                          className="p-3 border-t border-stone-200 bg-white flex items-center gap-2 shrink-0"
+                        >
+                          <input
+                            type="text"
+                            placeholder="কাস্টমারকে উত্তর লিখুন এবং Enter চাপুন..."
+                            value={adminReplyText}
+                            onChange={(e) => setAdminReplyText(e.target.value)}
+                            disabled={isSendingAdminReply}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 focus:outline-hidden bg-stone-50/50"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!adminReplyText.trim() || isSendingAdminReply}
+                            className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-700/20 transition-all shrink-0"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>রিপ্লাই পাঠান</span>
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-2">
+                        <MessageSquare className="w-12 h-12 text-stone-300" />
+                        <h4 className="text-sm font-bold text-gray-700">কোনো চ্যাট নির্বাচন করা হয়নি</h4>
+                        <p className="text-xs max-w-xs">বাম পাশের তালিকা থেকে যেকোনো কাস্টমারের চ্যাটে ক্লিক করে লাইভ কথা বলুন।</p>
+                      </div>
                     )}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* VIEW 2: CONTACT FORM SUBMISSIONS */}
+              {messagesSubTab === 'inquiries' && (
+                <div className="bg-white rounded-3xl border border-stone-200 p-6 space-y-4 w-full">
+                  <h3 className="text-base font-bold text-gray-900">ওয়েবসাইট যোগাযোগ ফরমের বার্তা</h3>
+                  <div className="space-y-3">
+                    {messages.length === 0 && (
+                      <p className="rounded-xl bg-stone-50 p-5 text-center text-sm text-gray-500">
+                        এখনো কোনো ফরম বার্তা আসেনি।
+                      </p>
+                    )}
+                    {messages.map((m) => (
+                      <div key={m.id} className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-1.5">
+                        <div className="flex justify-between items-center font-bold text-gray-900">
+                          <span>{m.name}</span>
+                          <span className="text-[10px] text-gray-400 font-normal">{new Date(m.createdAt).toLocaleString('bn-BD')}</span>
+                        </div>
+                        <p className="font-semibold text-gray-700">{m.emailOrPhone}</p>
+                        {m.subject && <p className="text-gray-500">{m.subject}</p>}
+                        <p className="text-gray-700">{m.message}</p>
+                        {!m.emailOrPhone.includes('@') && (
+                          <a href={`tel:${m.emailOrPhone}`} className="inline-flex items-center gap-1 pt-1 font-bold text-emerald-700">
+                            <PhoneCall className="h-3 w-3" /> কল করুন
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

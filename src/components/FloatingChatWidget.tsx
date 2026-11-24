@@ -1,213 +1,376 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare,
   X,
   Send,
-  CheckCircle2,
-  Phone,
   Sparkles,
+  User,
+  CheckCheck,
   MessageCircle,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
+interface ChatMessage {
+  id: string;
+  sessionId: string;
+  senderRole: 'CUSTOMER' | 'ADMIN';
+  senderName: string;
+  senderPhone?: string | null;
+  text: string;
+  createdAt: string;
+}
+
 export default function FloatingChatWidget() {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [showIdentityForm, setShowIdentityForm] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  const [hasNewAdminReply, setHasNewAdminReply] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://zakjomok-backend.vercel.app').replace(/\/$/, '');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !phone.trim() || !message.trim()) {
-      setErrorMessage(t('অনুগ্রহ করে নাম, ফোন নম্বর ও মেসেজ লিখুন।', 'Please enter your name, phone and message.'));
-      return;
-    }
+  // 1. Initialize or load sessionId & identity from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-    setIsSubmitting(true);
-    setErrorMessage('');
+    let savedSession = localStorage.getItem('zakjomok_chat_session');
+    if (!savedSession) {
+      savedSession = 'sess_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+      localStorage.setItem('zakjomok_chat_session', savedSession);
+    }
+    setSessionId(savedSession);
+
+    const savedName = localStorage.getItem('zakjomok_chat_name') || '';
+    const savedPhone = localStorage.getItem('zakjomok_chat_phone') || '';
+    setCustomerName(savedName);
+    setCustomerPhone(savedPhone);
+  }, []);
+
+  // 2. Fetch messages for this session
+  const fetchMessages = async (sid: string) => {
+    if (!sid) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/${sid}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setMessages((prev) => {
+            // Check if there is a new message from admin when chat is closed
+            if (!isOpen && data.data.length > prev.length) {
+              const last = data.data[data.data.length - 1];
+              if (last.senderRole === 'ADMIN') {
+                setHasNewAdminReply(true);
+              }
+            }
+            return data.data;
+          });
+        }
+      }
+    } catch {
+      // offline / polling silent fail
+    }
+  };
+
+  // 3. Polling effect: Poll every 3 seconds while chat is active
+  useEffect(() => {
+    if (!sessionId) return;
+
+    // Initial fetch
+    fetchMessages(sessionId);
+
+    const interval = setInterval(() => {
+      fetchMessages(sessionId);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [sessionId, isOpen]);
+
+  // 4. Auto scroll to bottom when messages update
+  useEffect(() => {
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setHasNewAdminReply(false);
+    }
+  }, [messages, isOpen]);
+
+  // 5. Focus input when opened
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 150);
+    }
+  }, [isOpen]);
+
+  // 6. Handle sending message
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const textToSend = inputText.trim();
+    if (!textToSend || !sessionId || isSending) return;
+
+    setIsSending(true);
+    setInputText('');
+
+    // Optimistic local update
+    const tempMsg: ChatMessage = {
+      id: 'temp_' + Date.now(),
+      sessionId,
+      senderRole: 'CUSTOMER',
+      senderName: customerName || 'কাস্টমার',
+      senderPhone: customerPhone || null,
+      text: textToSend,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, tempMsg]);
 
     try {
-      const res = await fetch(`${API_BASE}/api/contact`, {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
-          emailOrPhone: phone.trim(),
-          subject: 'Live Chat / SMS Inquiry',
-          message: message.trim(),
+          sessionId,
+          text: textToSend,
+          senderName: customerName || 'কাস্টমার',
+          senderPhone: customerPhone || null,
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || t('মেসেজ পাঠানো যায়নি। আবার চেষ্টা করুন।', 'Failed to send message.'));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === tempMsg.id ? data.data : m))
+          );
+        }
       }
-
-      setIsSuccess(true);
-      setName('');
-      setPhone('');
-      setMessage('');
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : t('মেসেজ পাঠানো যায়নি। আবার চেষ্টা করুন।', 'Failed to send message.'));
+      console.error('Failed to send live chat message:', err);
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
+    }
+  };
+
+  // Save optional identity
+  const handleSaveIdentity = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('zakjomok_chat_name', customerName);
+    localStorage.setItem('zakjomok_chat_phone', customerPhone);
+    setShowIdentityForm(false);
+  };
+
+  const formatTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
     }
   };
 
   return (
     <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 select-none">
-      {/* 1. CHAT POPUP BOX */}
+      {/* 1. MESSENGER CHAT BOX */}
       {isOpen && (
-        <div className="mb-3 w-[calc(100vw-2.5rem)] sm:w-96 rounded-3xl bg-white shadow-2xl border border-stone-200/90 overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+        <div className="mb-3 w-[calc(100vw-2.5rem)] sm:w-96 h-[520px] max-h-[80vh] rounded-3xl bg-white shadow-2xl border border-stone-200/90 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+          
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white p-4 sm:p-5">
+          <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white p-3.5 sm:p-4 shrink-0 shadow-xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-emerald-300" />
+                  <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur border border-white/20 flex items-center justify-center font-black text-sm">
+                    🥗
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-emerald-900 rounded-full animate-pulse" />
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-bold leading-tight flex items-center gap-1.5">
-                    {t('ZaKJomok লাইভ সাপোর্ট', 'ZaKJomok Live Support')}
+                    {t('ZaKJomok লাইভ চ্যাট', 'ZaKJomok Live Chat')}
                   </h3>
                   <p className="text-[11px] text-emerald-200/90 flex items-center gap-1 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-                    {t('এডমিন অনলাইনে আছেন', 'Admin is Online')}
+                    {t('এডমিন অনলাইনে আছেন • মেসেঞ্জার', 'Admin is Online • Messenger')}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Close Chat"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="p-4 sm:p-5 max-h-[70vh] overflow-y-auto">
-            {isSuccess ? (
-              <div className="py-8 text-center space-y-3">
-                <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h4 className="text-base font-bold text-stone-900">
-                  {t('মেসেজটি এডমিনের কাছে পৌঁছেছে!', 'Message Delivered to Admin!')}
-                </h4>
-                <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
-                  {t(
-                    'ধন্যবাদ! আপনার বার্তাটি সরাসরি আমাদের এডমিন প্যানেলে জমা হয়েছে। খুব দ্রুত আমাদের প্রতিনিধি আপনার ফোন নম্বরে যোগাযোগ করবেন।',
-                    'Thank you! Your message has been sent to our admin panel. Our team will contact you shortly.'
-                  )}
-                </p>
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setIsSuccess(false)}
-                  className="mt-4 px-5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-colors"
+                  onClick={() => setShowIdentityForm(!showIdentityForm)}
+                  title={t('আপনার পরিচয় সেট করুন', 'Set your profile')}
+                  className={`p-1.5 rounded-full transition-colors ${
+                    showIdentityForm ? 'bg-white text-emerald-900' : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
                 >
-                  {t('আরেকটি বার্তা পাঠান', 'Send another message')}
+                  <User className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  aria-label="Close Chat"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Greeting Bubble */}
-                <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-100 text-stone-700 text-xs leading-relaxed">
-                  <div className="flex items-center gap-1.5 text-emerald-800 font-bold mb-1">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{t('স্বাগতম!', 'Welcome!')}</span>
-                  </div>
-                  {t(
-                    'সালাদ, খাদ্য তালিকা বা যেকোনো তথ্যের জন্য নিচের বক্সে মেসেজ দিন। আপনার মেসেজ সরাসরি এডমিনের কাছে চলে যাবে।',
-                    'Have questions about salads or orders? Send a message below and admin will receive it directly.'
-                  )}
+            </div>
+
+            {/* Optional Identity Drawer */}
+            {showIdentityForm && (
+              <form onSubmit={handleSaveIdentity} className="mt-3 pt-3 border-t border-white/15 space-y-2 text-stone-800 animate-in fade-in">
+                <p className="text-[11px] text-white/90 font-medium">
+                  {t('আপনার নাম ও ফোন দিন যাতে এডমিন আপনাকে চিনতে পারে:', 'Enter your name and phone for admin:')}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('আপনার নাম', 'Your Name')}
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-stone-200 focus:outline-hidden"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="01XXXXXXXXX"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-stone-200 focus:outline-hidden"
+                  />
                 </div>
-
-                {errorMessage && (
-                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
-                    {errorMessage}
-                  </div>
-                )}
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                      {t('আপনার নাম', 'Your Name')} <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={t('যেমন: মাহফুজ আহমেদ', 'e.g. Mahfuz Ahmed')}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 focus:outline-hidden focus:border-emerald-600 bg-stone-50/40"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                      {t('মোবাইল নম্বর', 'Mobile Number')} <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="01XXXXXXXXX"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 focus:outline-hidden focus:border-emerald-600 bg-stone-50/40"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                      {t('আপনার বার্তা বা প্রশ্ন', 'Your Message')} <span className="text-rose-500">*</span>
-                    </label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder={t('কী জানতে চান বিস্তারিত লিখুন...', 'Write your message here...')}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 focus:outline-hidden focus:border-emerald-600 bg-stone-50/40 resize-none"
-                    />
-                  </div>
-
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowIdentityForm(false)}
+                    className="px-3 py-1 text-[11px] font-bold text-white/80 hover:text-white"
+                  >
+                    {t('বন্ধ করুন', 'Cancel')}
+                  </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-700/20 flex items-center justify-center gap-2 transition-all"
+                    className="px-3 py-1 bg-white text-emerald-900 rounded-lg text-[11px] font-black shadow-xs hover:bg-emerald-50"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    {isSubmitting ? t('পাঠানো হচ্ছে...', 'Sending...') : t('মেসেজ পাঠান', 'Send Message')}
+                    {t('সেভ করুন', 'Save')}
                   </button>
-                </form>
-
-                {/* Direct WhatsApp Quick Contact Shortcut */}
-                <div className="pt-2 border-t border-stone-100 text-center">
-                  <a
-                    href="https://wa.me/8801309834483?text=%E0%A6%86%E0%A6%B8%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%AE%E0%A7%81%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%95%E0%A7%81%E0%A6%AE%2C%20ZaKJomok%20%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%A6%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A7%87%20%E0%A6%9C%E0%A6%BE%E0%A6%A8%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{t('অথবা হোয়াটসঅ্যাপে সরাসরি কথা বলুন', 'Or chat directly on WhatsApp')}</span>
-                  </a>
                 </div>
-              </div>
+              </form>
             )}
+          </div>
+
+          {/* Messages Scroll Area */}
+          <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-3 bg-[#fbfdfb]">
+            {/* Initial Welcome Greeting */}
+            <div className="flex justify-start gap-2">
+              <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-xs font-black">
+                Z
+              </div>
+              <div className="max-w-[82%] rounded-2xl rounded-tl-xs bg-white border border-stone-200/80 p-3 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 mb-1">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  <span>{t('ZaKJomok সাপোর্ট টিম', 'ZaKJomok Support')}</span>
+                </div>
+                <p className="text-xs text-stone-700 leading-relaxed">
+                  {t(
+                    'আসসালামু আলাইকুম! ZaKJomok-এ আপনাকে স্বাগতম। আপনি যেকোনো প্রশ্ন বা কথা এখানে লিখুন, আমাদের এডমিন সাথে সাথে দেখতে পাচ্ছেন।',
+                    'Welcome to ZaKJomok! Type any question or message here, our admin sees it instantly.'
+                  )}
+                </p>
+                <span className="block text-[9px] text-stone-400 mt-1 text-right">
+                  {formatTime(new Date().toISOString())}
+                </span>
+              </div>
+            </div>
+
+            {/* Rendered Live Chat Messages */}
+            {messages.map((msg) => {
+              const isCustomer = msg.senderRole === 'CUSTOMER';
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex ${isCustomer ? 'justify-end' : 'justify-start gap-2'} animate-in fade-in duration-150`}
+                >
+                  {!isCustomer && (
+                    <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center shrink-0 text-xs font-black shadow-2xs">
+                      Z
+                    </div>
+                  )}
+
+                  <div
+                    className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed shadow-2xs ${
+                      isCustomer
+                        ? 'bg-emerald-700 text-white rounded-tr-xs'
+                        : 'bg-white text-stone-900 border border-stone-200/90 rounded-tl-xs'
+                    }`}
+                  >
+                    {!isCustomer && (
+                      <span className="block text-[10px] font-black text-emerald-800 mb-0.5">
+                        {msg.senderName || t('ZaKJomok এডমিন', 'ZaKJomok Admin')}
+                      </span>
+                    )}
+
+                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+
+                    <div
+                      className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${
+                        isCustomer ? 'text-emerald-100' : 'text-stone-400'
+                      }`}
+                    >
+                      <span>{formatTime(msg.createdAt)}</span>
+                      {isCustomer && <CheckCheck className="w-3 h-3 text-emerald-200 inline" />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Bottom Messenger Reply Bar */}
+          <div className="p-2.5 sm:p-3 bg-white border-t border-stone-200 shrink-0">
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder={t('একটি বার্তা লিখুন (যেমন মেসেঞ্জারে লিখেন)...', 'Type a message...')}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                disabled={isSending}
+                className="flex-1 px-3.5 py-2.5 text-xs rounded-2xl bg-stone-100/90 border border-transparent focus:border-emerald-600 focus:bg-white focus:outline-hidden text-stone-800 placeholder-stone-400 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={!inputText.trim() || isSending}
+                className="w-10 h-10 rounded-2xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-900/15 transition-all hover:scale-105 active:scale-95"
+                aria-label="Send Message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+
+            {/* Quick WhatsApp Fallback */}
+            <div className="mt-1.5 flex justify-between items-center px-1">
+              <span className="text-[10px] text-stone-400">
+                {customerName ? `${customerName} হিসেবে চ্যাট করছেন` : 'লাইভ রিয়েল-টাইম চ্যাট'}
+              </span>
+              <a
+                href="https://wa.me/8801309834483?text=%E0%A6%86%E0%A6%B8%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%AE%E0%A7%81%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%95%E0%A7%81%E0%A6%AE%2C%20ZaKJomok%20%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%A6%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A7%87%20%E0%A6%9C%E0%A6%BE%E0%A6%A8%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-emerald-700 hover:underline flex items-center gap-1"
+              >
+                <MessageCircle className="w-3 h-3 text-emerald-600" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -228,7 +391,7 @@ export default function FloatingChatWidget() {
               <span className="absolute top-0 right-0 flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 border-2 border-white text-[9px] font-black text-white items-center justify-center">
-                  1
+                  {hasNewAdminReply ? '!' : '1'}
                 </span>
               </span>
             </>
@@ -237,7 +400,7 @@ export default function FloatingChatWidget() {
           {/* Hover Tooltip (Desktop) */}
           {!isOpen && (
             <span className="absolute right-16 px-3 py-1.5 rounded-xl bg-stone-900 text-white text-[11px] font-bold whitespace-nowrap shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
-              {t('মেসেজ দিন / লাইভ চ্যাট 💬', 'Send Message / Live Chat 💬')}
+              {t('মেসেঞ্জারের মতো লাইভ চ্যাট করুন 💬', 'Live Chat like Messenger 💬')}
             </span>
           )}
         </button>
