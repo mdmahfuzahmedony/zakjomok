@@ -10,6 +10,7 @@ import ProductDetailsModal from '../components/ProductDetailsModal';
 import BlogSection from '../components/BlogSection';
 import ContactSection from '../components/ContactSection';
 import Footer from '../components/Footer';
+import FloatingChatWidget from '../components/FloatingChatWidget';
 import OrderModal from '../components/OrderModal';
 import CartDrawer from '../components/CartDrawer';
 import { fetchCategories, fetchProducts } from '../lib/api';
@@ -178,6 +179,9 @@ export default function HomePage() {
 
       {/* 7. ফুটার (Footer) */}
       <Footer />
+
+      {/* 8. ফ্লোটিং লাইভ চ্যাট / SMS উইজেট (Floating Chat/SMS Widget) */}
+      <FloatingChatWidget />
     </div>
   );
 }
