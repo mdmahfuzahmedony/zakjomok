@@ -50,16 +50,16 @@ export default function CategorySection({
 
         {/* Category Display - Single Showcase Card or Grid */}
         {categories.length === 1 ? (
-          <div className="flex justify-center items-center pb-2 pt-1">
+          <div className="flex justify-start items-center pb-2 pt-1">
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat.slug || selectedCategory === null;
               return (
                 <button
                   key={cat.id}
                   onClick={() => onSelectCategory(selectedCategory === cat.slug ? null : cat.slug)}
-                  className="group relative p-4 sm:p-6 rounded-3xl flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-5 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 border border-emerald-200/90 shadow-sm hover:shadow-md transition-all max-w-xl w-full"
+                  className="group relative p-4 sm:p-5 rounded-3xl flex items-center text-left gap-4 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 border border-emerald-200/90 shadow-sm hover:shadow-md transition-all max-w-md w-full"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 bg-white border-2 border-emerald-300 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-white border-2 border-emerald-300 shadow-xs group-hover:scale-105 transition-transform">
                     <img
                       src={cat.imageUrl}
                       alt={cat.name}
@@ -68,13 +68,13 @@ export default function CategorySection({
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider mb-1.5">
-                      {t('প্রধান স্পেশাল ক্যাটাগরি', 'Featured Category')}
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider mb-1">
+                      {t('প্রধান ক্যাটাগরি', 'Featured Category')}
                     </span>
-                    <h3 className="text-base sm:text-xl font-black text-stone-900 group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-base sm:text-lg font-black text-stone-900 group-hover:text-emerald-700 transition-colors">
                       {cat.name}
                     </h3>
-                    <p className="mt-1 text-xs text-stone-600 line-clamp-2 leading-relaxed">
+                    <p className="mt-0.5 text-xs text-stone-600 line-clamp-1 leading-relaxed">
                       {cat.description}
                     </p>
                   </div>

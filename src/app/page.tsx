@@ -146,18 +146,8 @@ export default function HomePage() {
                   {t('সব পণ্য রিসেট করুন', 'Reset All Products')}
                 </button>
               </div>
-            ) : filteredProducts.length === 1 ? (
-              /* Single Product Centered Showcase */
-              <div className="max-w-md sm:max-w-lg mx-auto">
-                <ProductCard
-                  key={filteredProducts[0].id}
-                  product={filteredProducts[0]}
-                  onViewDetails={(prod) => setSelectedDetailProduct(prod)}
-                  onOrderNow={(prod) => handleDirectOrder(prod, 1)}
-                />
-              </div>
             ) : (
-              /* Multiple cards grid */
+              /* Standard Left-to-Right Grid */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {filteredProducts.map((product) => (
                   <ProductCard
