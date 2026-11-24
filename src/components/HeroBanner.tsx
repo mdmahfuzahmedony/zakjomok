@@ -31,8 +31,8 @@ export default function HeroBanner() {
 
             <p className="text-base sm:text-lg text-stone-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
               {t(
-                'আপনার সুস্থ জীবনের সঙ্গী হতে আমরা নিয়ে এসেছি প্রিমিয়াম বাদাম, সিডস, হোল গ্রেইন ওটস এবং সাথে রয়েছে আমাদের বিশেষ ফ্রেশ মিক্সড সালাদ ও হোল হুইট স্যান্ডউইচ।',
-                'Your trusted partner for healthy living. Enjoy our fresh mixed salads, whole wheat sandwiches, premium nuts, seeds and whole grains.'
+                '১০টি তাজা ও প্রাকৃতিক পুষ্টিকর উপাদানে প্রস্তুত আমাদের সিগনেচার "স্বাস্থ্যকর মিক্সড সালাদ"। সাথে রয়েছে স্পেশাল টক-ঝাল সস—যা প্রতিদিনের ক্যালোরি নিয়ন্ত্রণে রেখে শরীরকে রাখে চনমনে ও কর্মক্ষম।',
+                'Prepared with 10 organic nutritious ingredients and signature tangy-spicy dressing. Our Healthy Mixed Salad keeps your daily calories controlled and your body energized.'
               )}
             </p>
 
@@ -41,14 +41,14 @@ export default function HeroBanner() {
                 href="#products"
                 className="w-full sm:w-auto px-8 py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition-all hover:scale-105"
               >
-                {t('পণ্যসমূহ দেখুন', 'Explore Products')}
+                {t('সালাদ অর্ডার করুন', 'Order Salad Now')}
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
                 href="#products"
                 className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-stone-50 text-emerald-800 border-2 border-emerald-200 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all hover:border-emerald-300 shadow-xs"
               >
-                {t('🥗 ফ্রেশ মিলস ও সালাদ', '🥗 Fresh Meals & Salads')}
+                {t('🥗 স্বাস্থ্যকর মিক্সড সালাদ', '🥗 Healthy Mixed Salad')}
               </a>
             </div>
 

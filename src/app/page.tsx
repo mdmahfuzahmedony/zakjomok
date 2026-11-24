@@ -31,29 +31,11 @@ export default function HomePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [cats, prods] = await Promise.all([
-          fetchCategories(),
-          fetchProducts(),
-        ]);
-        if (cats && cats.length > 0) setCategories(cats);
-        // Always prioritize the 4 mouth-watering healthy salad & meal products
-        if (prods && prods.length > 0) {
-          const freshMeals = prods.filter(
-            (p) =>
-              p.categorySlug === 'fresh-meals' ||
-              p.slug.includes('salad') ||
-              p.slug.includes('sandwich')
-          );
-          if (freshMeals.length >= 4) {
-            setProducts(freshMeals.slice(0, 4));
-          } else {
-            setProducts(INITIAL_PRODUCTS);
-          }
-        } else {
-          setProducts(INITIAL_PRODUCTS);
-        }
+        // Enforce the 1 featured healthy mixed salad category & 1 product
+        setCategories(INITIAL_CATEGORIES);
+        setProducts(INITIAL_PRODUCTS);
       } catch (err) {
-        console.error('Error fetching initial data:', err);
+        console.error('Error loading data:', err);
       }
     }
     loadData();
@@ -164,8 +146,18 @@ export default function HomePage() {
                   {t('সব পণ্য রিসেট করুন', 'Reset All Products')}
                 </button>
               </div>
+            ) : filteredProducts.length === 1 ? (
+              /* Single Product Centered Showcase */
+              <div className="max-w-md sm:max-w-lg mx-auto">
+                <ProductCard
+                  key={filteredProducts[0].id}
+                  product={filteredProducts[0]}
+                  onViewDetails={(prod) => setSelectedDetailProduct(prod)}
+                  onOrderNow={(prod) => handleDirectOrder(prod, 1)}
+                />
+              </div>
             ) : (
-              /* 3 cards per row on desktop (lg:grid-cols-3) */
+              /* Multiple cards grid */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {filteredProducts.map((product) => (
                   <ProductCard

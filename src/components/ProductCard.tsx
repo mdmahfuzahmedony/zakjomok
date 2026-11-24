@@ -100,17 +100,36 @@ export default function ProductCard({
             </span>
 
             {/* Product Title */}
-            <h3 className="mt-2 text-base sm:text-lg font-bold text-stone-900 line-clamp-1 leading-snug">
+            <h3 className="mt-2 text-base sm:text-lg font-bold text-stone-900 leading-snug">
               {product.name}
             </h3>
+
+            {/* Ingredients preview pill list */}
+            {product.ingredients && product.ingredients.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {product.ingredients.slice(0, 5).map((ing, i) => (
+                  <span
+                    key={i}
+                    className="inline-block rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-700"
+                  >
+                    {ing.replace(/^[০-৯\d\.\s]+/, '').split('—')[0].trim()}
+                  </span>
+                ))}
+                {product.ingredients.length > 5 && (
+                  <span className="inline-block rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                    +{product.ingredients.length - 5}টি উপাদান
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* "বিস্তারিত দেখুন" Button directly below title */}
             <button
               onClick={handleOpenDetails}
-              className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100 hover:text-emerald-950"
+              className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100 hover:text-emerald-950"
             >
               <Eye className="h-3.5 w-3.5 text-emerald-600" />
-              {t('বিস্তারিত দেখুন (উপকরণ ও পুষ্টি)', 'View Details (Ingredients & Nutrition)')}
+              {t('বিস্তারিত দেখুন (১০টি উপকরণ ও পুষ্টি)', 'View Details (10 Ingredients & Nutrition)')}
             </button>
           </div>
 

@@ -53,11 +53,10 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold text-sm mb-4">{t('জনপ্রিয় ক্যাটাগরি', 'Popular Categories')}</h4>
             <ul className="space-y-2 text-xs text-stone-400">
-              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">Nuts & Dry Fruits</Link></li>
-              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">Organic Seeds</Link></li>
-              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">Oats & Breakfast</Link></li>
-              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">Healthy Mixed Salad</Link></li>
-              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">Whole Wheat Sandwich</Link></li>
+              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">স্বাস্থ্যকর মিক্সড সালাদ (Healthy Mixed Salad)</Link></li>
+              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">১০টি পুষ্টিকর উপাদান চার্ট</Link></li>
+              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">হোমমেড স্পেশাল টক-ঝাল সস</Link></li>
+              <li><Link href="/#products" className="hover:text-emerald-400 transition-colors">২০৪ কিলোক্যালরি ডায়েট মিল</Link></li>
             </ul>
           </div>
 
