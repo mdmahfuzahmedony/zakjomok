@@ -830,10 +830,12 @@ export default function AdminDashboardPage() {
         <div>
           {/* Sidebar Brand Header */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-emerald-900/80 bg-emerald-950">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-black text-emerald-950 text-lg shadow-md shadow-emerald-500/20">
-                Z
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img
+                src="/logo.png"
+                alt="ZaKJomok Brand Logo"
+                className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+              />
               <div>
                 <span className="text-xl font-black tracking-tight text-white">
                   ZaK<span className="text-emerald-400">Jomok</span>
@@ -842,7 +844,7 @@ export default function AdminDashboardPage() {
                   Admin Panel
                 </p>
               </div>
-            </div>
+            </Link>
 
             <button
               onClick={() => setMobileSidebarOpen(false)}

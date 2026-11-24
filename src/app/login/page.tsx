@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
-import { Leaf, Lock, Phone, ArrowRight } from 'lucide-react';
+import { Lock, Phone, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,10 +45,20 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-white p-8 rounded-3xl border border-stone-200 shadow-md">
           {/* Logo */}
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white mx-auto shadow-md mb-3">
-              <Leaf className="w-6 h-6" />
-            </div>
-            <h1 className="text-2xl font-black text-gray-900">কাস্টমার লগইন</h1>
+            <Link href="/" className="inline-flex flex-col items-center justify-center group mb-3">
+              <img
+                src="/logo.png"
+                alt="ZaKJomok Brand Logo"
+                className="h-14 w-auto object-contain transition-transform group-hover:scale-105"
+              />
+              <span className="text-2xl font-black tracking-tight text-stone-900 mt-2">
+                ZaK<span className="text-emerald-600">Jomok</span>
+              </span>
+              <p className="text-[10px] font-bold text-emerald-700 tracking-wider uppercase">
+                Good Food • Better You
+              </p>
+            </Link>
+            <h1 className="text-xl font-black text-gray-900">কাস্টমার লগইন</h1>
             <p className="text-xs text-gray-500 mt-1">
               আপনার ZakJomok অ্যাকাউন্টে লগইন করে অর্ডার ও ডিসকাউন্ট দেখুন
             </p>

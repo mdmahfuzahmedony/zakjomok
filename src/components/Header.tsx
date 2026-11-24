@@ -260,13 +260,16 @@ export default function Header() {
                   ) : (
                     <div>
                       {/* Guest User Header */}
-                      <div className="p-3 bg-stone-50 rounded-xl mb-3 border border-stone-100">
-                        <p className="text-xs font-extrabold text-stone-900">
-                          {t('ZaKJomok এ স্বাগতম!', 'Welcome to ZaKJomok!')}
-                        </p>
-                        <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
-                          {t('অর্ডার ট্র্যাক ও কুপন সুবিধা পেতে লগইন করুন।', 'Sign in to track orders and access exclusive coupons.')}
-                        </p>
+                      <div className="p-3 bg-stone-50 rounded-xl mb-3 border border-stone-100 flex items-center gap-3">
+                        <img src="/logo.png" alt="ZaKJomok" className="h-8 w-auto object-contain shrink-0" />
+                        <div>
+                          <p className="text-xs font-extrabold text-stone-900 leading-tight">
+                            {t('ZaKJomok এ স্বাগতম!', 'Welcome to ZaKJomok!')}
+                          </p>
+                          <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
+                            {t('অর্ডার ট্র্যাক ও কুপন সুবিধা পেতে লগইন করুন।', 'Sign in to track orders and access exclusive coupons.')}
+                          </p>
+                        </div>
                       </div>
 
                       <div className="space-y-2">

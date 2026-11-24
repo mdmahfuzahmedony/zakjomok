@@ -1,8 +1,9 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Leaf, Lock, Phone } from 'lucide-react';
+import { ArrowRight, Lock, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminLoginPage() {
@@ -50,13 +51,25 @@ export default function AdminLoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-stone-100 px-4 py-12">
       <section className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 shadow-lg">
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-md">
-            <Leaf className="h-7 w-7" />
+          <Link href="/" className="inline-flex flex-col items-center justify-center group mb-4">
+            <img
+              src="/logo.png"
+              alt="ZaKJomok Brand Logo"
+              className="h-16 w-auto object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="text-2xl font-black tracking-tight text-stone-900 mt-2">
+              ZaK<span className="text-emerald-600">Jomok</span>
+            </span>
+            <p className="text-[10px] font-bold text-emerald-700 tracking-wider uppercase">
+              Good Food • Better You
+            </p>
+          </Link>
+          <div className="block">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-black uppercase tracking-wider mb-2">
+              Admin Portal
+            </span>
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">
-            ZakJomok
-          </p>
-          <h1 className="mt-1 text-2xl font-black text-gray-900">Admin Portal</h1>
+          <h1 className="mt-1 text-2xl font-black text-gray-900">অ্যাডমিন প্রবেশদ্বার</h1>
           <p className="mt-2 text-sm text-gray-500">
             প্রবেশ করতে admin-এর মোবাইল নম্বর ও পাসওয়ার্ড দিন।
           </p>
