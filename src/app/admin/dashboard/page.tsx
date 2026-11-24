@@ -490,9 +490,12 @@ export default function AdminDashboardPage() {
     }
 
     const matchedCat = categoriesList.find((c) => c.slug === newProdCategory);
-    const slug = newProdName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    if (!slug || !matchedCat) {
-      showToast('পণ্যের নাম ইংরেজিতে দিন এবং একটি category বেছে নিন।', 'error');
+    let slug = newProdName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!slug) {
+      slug = `product-${Date.now()}`;
+    }
+    if (!matchedCat) {
+      showToast('একটি category বেছে নিন।', 'error');
       return;
     }
 

@@ -26,7 +26,7 @@ export interface Product {
 
 export const INITIAL_CATEGORIES: Category[] = [
   {
-    id: 'cat-healthy-mixed-salad',
+    id: 'ddbb7da8-5051-4a2b-a7e8-29b6e6172a6d',
     name: 'স্বাস্থ্যকর মিক্সড সালাদ',
     slug: 'healthy-mixed-salad',
     description: '১০টি তাজা ও পুষ্টিকর উপাদান এবং স্পেশাল টক-ঝাল সসে প্রস্তুত সম্পূর্ণ ব্যালান্সড ডায়েট মিল',
@@ -36,7 +36,7 @@ export const INITIAL_CATEGORIES: Category[] = [
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
-    id: 'prod-healthy-mixed-salad',
+    id: 'af89440d-ee79-4573-9ad2-9d9d43d3e20d',
     name: 'স্বাস্থ্যকর মিক্সড সালাদ (স্পেশাল টক-ঝাল সস সহ)',
     slug: 'healthy-mixed-salad',
     description: 'সিদ্ধ ডিম, গাজর, শসা, টমেটো, বরবটি, বাঁধাকপি, সিদ্ধ ছোলা, মিষ্টি ভুট্টা, বিটরুট ও স্পেশাল টক-ঝাল সসের সম্পূর্ণ সুষম ও পুষ্টিকর সালাদ বাটি।',

@@ -26,12 +26,18 @@ export async function fetchCategories(): Promise<Category[]> {
     const res = await fetch(`${API_BASE}/api/categories`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data.success && data.data && data.data.length > 0) {
-        return data.data;
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        return data.data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          description: c.description || '',
+          imageUrl: c.imageUrl || '',
+        }));
       }
     }
   } catch (error) {
-    // Graceful fallback to initial categories
+    console.error('Failed to fetch categories from API:', error);
   }
   return INITIAL_CATEGORIES;
 }
@@ -39,34 +45,34 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function fetchProducts(categorySlug?: string, featuredOnly?: boolean): Promise<Product[]> {
   try {
     let url = `${API_BASE}/api/products?`;
-    if (categorySlug) url += `category=${categorySlug}&`;
+    if (categorySlug) url += `category=${encodeURIComponent(categorySlug)}&`;
     if (featuredOnly) url += `featured=true&`;
 
     const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data.success && data.data && data.data.length > 0) {
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
         return data.data.map((p: any) => ({
           id: p.id,
           name: p.name,
           slug: p.slug,
           description: p.description || '',
-          price: p.price,
-          discountPrice: p.discountPrice,
+          price: Number(p.price) || 0,
+          discountPrice: p.discountPrice != null && p.discountPrice !== '' ? Number(p.discountPrice) : undefined,
           packSize: p.packSize || '',
-          stock: p.stock,
+          stock: typeof p.stock === 'number' ? p.stock : (Number(p.stock) || 0),
           imageUrl: p.imageUrl || '',
           ingredients: Array.isArray(p.ingredients) ? p.ingredients : [],
           highlights: Array.isArray(p.highlights) ? p.highlights : [],
-          calories: p.calories ?? null,
-          isFeatured: p.isFeatured,
+          calories: p.calories != null && p.calories !== '' ? Number(p.calories) : null,
+          isFeatured: Boolean(p.isFeatured),
           categorySlug: p.category?.slug || '',
           categoryName: p.category?.name || '',
         }));
       }
     }
   } catch (error) {
-    // Graceful fallback
+    console.error('Failed to fetch products from API:', error);
   }
 
   let products = [...INITIAL_PRODUCTS];

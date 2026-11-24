@@ -31,11 +31,18 @@ export default function HomePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Enforce the 1 featured healthy mixed salad category & 1 product
-        setCategories(INITIAL_CATEGORIES);
-        setProducts(INITIAL_PRODUCTS);
+        const [cats, prods] = await Promise.all([
+          fetchCategories(),
+          fetchProducts(),
+        ]);
+        if (cats && cats.length > 0) {
+          setCategories(cats);
+        }
+        if (prods && prods.length > 0) {
+          setProducts(prods);
+        }
       } catch (err) {
-        console.error('Error loading data:', err);
+        console.error('Error loading data from API, using fallback:', err);
       }
     }
     loadData();
