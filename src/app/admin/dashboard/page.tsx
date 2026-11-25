@@ -43,6 +43,7 @@ import {
   Send,
   CheckCheck,
   User as UserIcon,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Product, Category } from '../../../data/initialProducts';
 import { useAuth } from '../../../context/AuthContext';
@@ -101,6 +102,7 @@ interface AdminChatMessage {
   senderName: string;
   senderPhone?: string | null;
   text: string;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
@@ -215,8 +217,13 @@ export default function AdminDashboardPage() {
   const [currentChatMessages, setCurrentChatMessages] = useState<AdminChatMessage[]>([]);
   const [adminReplyText, setAdminReplyText] = useState('');
   const [isSendingAdminReply, setIsSendingAdminReply] = useState(false);
+  const [adminImageFile, setAdminImageFile] = useState<File | null>(null);
+  const [adminImagePreviewUrl, setAdminImagePreviewUrl] = useState<string | null>(null);
+  const [isUploadingAdminImage, setIsUploadingAdminImage] = useState(false);
+  const [adminLightboxImage, setAdminLightboxImage] = useState<string | null>(null);
   const [messagesSubTab, setMessagesSubTab] = useState<'chat' | 'inquiries'>('chat');
   const adminChatEndRef = useRef<HTMLDivElement>(null);
+  const adminChatFileInputRef = useRef<HTMLInputElement>(null);
 
   // Load backend real data (Orders, Products, Categories, Messages)
   useEffect(() => {
@@ -468,11 +475,38 @@ export default function AdminDashboardPage() {
   // Handle Admin sending reply to customer
   const handleSendAdminReply = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!selectedChatSession || !adminReplyText.trim() || isSendingAdminReply) return;
+    if (!selectedChatSession || (!adminReplyText.trim() && !adminImageFile) || isSendingAdminReply || isUploadingAdminImage) return;
 
     const text = adminReplyText.trim();
     setIsSendingAdminReply(true);
     setAdminReplyText('');
+
+    let uploadedImageUrl: string | null = null;
+
+    if (adminImageFile) {
+      setIsUploadingAdminImage(true);
+      try {
+        const formData = new FormData();
+        formData.append('image', adminImageFile);
+
+        const uploadRes = await fetch(`${API_BASE}/api/chat/upload-image`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadRes.json();
+        if (uploadRes.ok && uploadData.success && uploadData.data?.url) {
+          uploadedImageUrl = uploadData.data.url;
+        }
+      } catch (err) {
+        console.error('Admin image upload failed:', err);
+      } finally {
+        setIsUploadingAdminImage(false);
+        if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
+        setAdminImageFile(null);
+        setAdminImagePreviewUrl(null);
+      }
+    }
 
     try {
       const res = await fetch(`${API_BASE}/api/chat/admin/reply`, {
@@ -484,6 +518,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           sessionId: selectedChatSession,
           text,
+          imageUrl: uploadedImageUrl,
         }),
       });
 
@@ -3117,7 +3152,20 @@ export default function AdminDashboardPage() {
                                       </span>
                                     </div>
 
-                                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                                    {/* Attached Image */}
+                                    {msg.imageUrl && (
+                                      <div className="mb-2 relative group overflow-hidden rounded-xl border border-black/10">
+                                        <img
+                                          src={msg.imageUrl}
+                                          alt="Chat attachment"
+                                          className="max-h-56 w-auto object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                          onClick={() => setAdminLightboxImage(msg.imageUrl || null)}
+                                          loading="lazy"
+                                        />
+                                      </div>
+                                    )}
+
+                                    {msg.text && <p className="whitespace-pre-wrap break-words">{msg.text}</p>}
                                   </div>
                                 </div>
                               );
@@ -3126,26 +3174,69 @@ export default function AdminDashboardPage() {
                           <div ref={adminChatEndRef} />
                         </div>
 
+                        {/* Preview selected image before sending */}
+                        {adminImagePreviewUrl && (
+                          <div className="px-3 py-1.5 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <img src={adminImagePreviewUrl} alt="Preview" className="w-10 h-10 object-cover rounded-lg border border-emerald-300" />
+                              <span className="text-[11px] text-stone-600 font-medium">ছবি নির্বাচন করা হয়েছে (WebP অপ্টিমাইজড)</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
+                                setAdminImageFile(null);
+                                setAdminImagePreviewUrl(null);
+                              }}
+                              className="p-1 text-stone-400 hover:text-stone-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        <input
+                          type="file"
+                          ref={adminChatFileInputRef}
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setAdminImageFile(file);
+                            setAdminImagePreviewUrl(URL.createObjectURL(file));
+                            e.target.value = '';
+                          }}
+                        />
+
                         {/* Admin Reply Bar */}
                         <form
                           onSubmit={handleSendAdminReply}
                           className="p-3 border-t border-stone-200 bg-white flex items-center gap-2 shrink-0"
                         >
+                          <button
+                            type="button"
+                            onClick={() => adminChatFileInputRef.current?.click()}
+                            title="ছবি সংযুক্ত করুন"
+                            className="w-10 h-10 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center shrink-0 transition-colors"
+                          >
+                            <ImageIcon className="w-4 h-4 text-emerald-700" />
+                          </button>
                           <input
                             type="text"
                             placeholder="কাস্টমারকে উত্তর লিখুন এবং Enter চাপুন..."
                             value={adminReplyText}
                             onChange={(e) => setAdminReplyText(e.target.value)}
-                            disabled={isSendingAdminReply}
+                            disabled={isSendingAdminReply || isUploadingAdminImage}
                             className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 focus:outline-hidden bg-stone-50/50"
                           />
                           <button
                             type="submit"
-                            disabled={!adminReplyText.trim() || isSendingAdminReply}
+                            disabled={(!adminReplyText.trim() && !adminImageFile) || isSendingAdminReply || isUploadingAdminImage}
                             className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-700/20 transition-all shrink-0"
                           >
                             <Send className="w-3.5 h-3.5" />
-                            <span>রিপ্লাই পাঠান</span>
+                            <span>{isUploadingAdminImage ? 'ছবি যাচ্ছে...' : 'রিপ্লাই পাঠান'}</span>
                           </button>
                         </form>
                       </>
@@ -3417,6 +3508,28 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Chat Image Lightbox Modal */}
+      {adminLightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setAdminLightboxImage(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl bg-black">
+            <button
+              onClick={() => setAdminLightboxImage(null)}
+              className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={adminLightboxImage}
+              alt="Full view"
+              className="max-h-[85vh] w-auto object-contain mx-auto"
+            />
           </div>
         </div>
       )}
