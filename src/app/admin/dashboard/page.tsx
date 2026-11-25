@@ -3060,7 +3060,7 @@ export default function AdminDashboardPage() {
 
                                 <p className="text-[11px] text-gray-500 truncate">
                                   {conv.lastSenderRole === 'ADMIN' ? 'আপনি: ' : ''}
-                                  {conv.lastMessage}
+                                  {conv.lastMessage || '📷 [ছবি পাঠানো হয়েছে]'}
                                 </p>
                               </div>
 
@@ -3154,14 +3154,21 @@ export default function AdminDashboardPage() {
 
                                     {/* Attached Image */}
                                     {msg.imageUrl && (
-                                      <div className="mb-2 relative group overflow-hidden rounded-xl border border-black/10">
+                                      <div className="mb-2 relative group overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-100 min-w-[200px] max-w-[280px]">
                                         <img
                                           src={msg.imageUrl}
                                           alt="Chat attachment"
-                                          className="max-h-56 w-auto object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                          className="w-full max-h-64 object-cover rounded-2xl cursor-pointer hover:opacity-95 transition-all shadow-xs"
                                           onClick={() => setAdminLightboxImage(msg.imageUrl || null)}
-                                          loading="lazy"
+                                          loading="eager"
                                         />
+                                        <div
+                                          onClick={() => setAdminLightboxImage(msg.imageUrl || null)}
+                                          className="mt-1 flex items-center justify-between text-[10px] text-stone-500 cursor-pointer hover:underline px-2 py-0.5"
+                                        >
+                                          <span>📷 ছবি বড় করে দেখুন</span>
+                                          <span className="text-emerald-700 font-bold">Zoom 🔍</span>
+                                        </div>
                                       </div>
                                     )}
 

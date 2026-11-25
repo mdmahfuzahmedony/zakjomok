@@ -437,21 +437,21 @@ export default function FloatingChatWidget() {
 
                       {/* Attached Image */}
                       {msg.imageUrl && (
-                        <div className="mb-2 relative group overflow-hidden rounded-xl border border-black/10">
+                        <div className="mb-2 relative group overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-100 min-w-[180px] max-w-[260px]">
                           <img
                             src={msg.imageUrl}
                             alt="Chat attachment"
-                            className="w-full max-h-48 object-cover cursor-pointer hover:scale-102 transition-transform duration-200"
+                            className="w-full max-h-52 object-cover rounded-2xl cursor-pointer hover:opacity-95 transition-all shadow-xs"
                             onClick={() => setLightboxImage(msg.imageUrl || null)}
-                            loading="lazy"
+                            loading="eager"
                           />
-                          <button
-                            type="button"
+                          <div
                             onClick={() => setLightboxImage(msg.imageUrl || null)}
-                            className="absolute bottom-1.5 right-1.5 p-1 bg-black/60 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="mt-1 flex items-center justify-between text-[10px] text-stone-500 cursor-pointer hover:underline px-2 py-0.5"
                           >
-                            <ZoomIn className="w-3.5 h-3.5" />
-                          </button>
+                            <span>📷 ছবি বড় করে দেখুন</span>
+                            <span className="text-emerald-700 font-bold">Zoom 🔍</span>
+                          </div>
                         </div>
                       )}
 
